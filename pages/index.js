@@ -1,438 +1,326 @@
 import { useEffect, useMemo, useState } from "react";
 
 const SUBJECTS = {
-  polish: "Język polski",
+  all: "Wszystko",
+  polish: "Polski",
   math: "Matematyka",
-  english: "Język angielski",
+  english: "Angielski",
 };
 
-const BASE_MISSIONS = [
-  {
-    subject: "polish",
-    topic: "Czytanie polecenia i wyszukiwanie informacji",
-    examContext: "Na egzaminie z języka polskiego trzeba uważnie czytać tekst i polecenie. Część zadań wymaga zaznaczenia jednej odpowiedzi, a część odpowiedzi własnymi słowami.",
-    learn: [
-      "Najpierw sprawdź, o co dokładnie pyta polecenie.",
-      "Potem znajdź w tekście fragment, który odpowiada na pytanie.",
-      "Nie dopowiadaj rzeczy, których nie ma w tekście.",
-    ],
-    strategy: "Strategia 3 kroków: polecenie → fragment tekstu → odpowiedź własnymi słowami.",
-    example: "Jeśli pytanie brzmi: Dlaczego bohater zmienił decyzję?, szukasz zdania, w którym pojawia się powód zmiany decyzji.",
-    task: "Przeczytaj zdanie: 'Antek zamknął zeszyt, bo zrozumiał, że najpierw musi poprawić wcześniejsze błędy'. Pytanie: Dlaczego Antek zamknął zeszyt?",
-    answer: "Bo zrozumiał, że najpierw musi poprawić wcześniejsze błędy.",
-    hint: "Szukaj po słowie: bo.",
-  },
-  {
-    subject: "polish",
-    topic: "Lektura obowiązkowa: bohater i uzasadnienie",
-    examContext: "W zadaniach z lektur nie wystarczy podać tytułu. Często trzeba dodać bohatera i uzasadnić odpowiedź sytuacją z utworu.",
-    learn: [
-      "Odpowiedź lekturowa ma trzy elementy: tytuł, bohater, sytuacja z lektury.",
-      "Błąd rzeczowy w lekturze może zabrać punkt.",
-      "Uzasadnienie musi pasować do treści książki.",
-    ],
-    strategy: "Schemat: Wybieram [bohatera], ponieważ [cecha]. Widać to, gdy [sytuacja z lektury].",
-    example: "Nemeczek jest przykładem odwagi, bo mimo słabości przeciwstawia się silniejszym chłopcom i pozostaje lojalny wobec kolegów.",
-    task: "Uzupełnij jedno zdanie: Bohaterem, który pokazuje odwagę, jest ________, ponieważ ________.",
-    answer: "Przykład: Nemeczek, ponieważ mimo strachu nie zdradza przyjaciół i zachowuje lojalność.",
-    hint: "Wybierz bohatera, którego znasz najlepiej. Najpierw cecha, potem sytuacja.",
-  },
-  {
-    subject: "polish",
-    topic: "Argument a przykład",
-    examContext: "W języku polskim oceniana jest umiejętność argumentowania. Uczeń powinien odróżniać argument od przykładu.",
-    learn: [
-      "Argument mówi, dlaczego coś jest prawdą.",
-      "Przykład pokazuje konkretną sytuację, która potwierdza argument.",
-      "Najbezpieczniej pisać: argument + przykład z lektury.",
-    ],
-    strategy: "Argument: 'przyjaźń wymaga lojalności'. Przykład: konkretna scena z lektury, która to pokazuje.",
-    example: "Argument: Odwaga nie zawsze oznacza siłę fizyczną. Przykład: Nemeczek jest słaby, ale postępuje odważnie.",
-    task: "Wybierz, co jest argumentem: A) Nemeczek był członkiem chłopców z Placu Broni. B) Odwaga może polegać na obronie przyjaciół mimo strachu.",
-    answer: "B. To argument, bo wyjaśnia ogólną myśl.",
-    hint: "Argument jest bardziej ogólny. Przykład jest konkretnym wydarzeniem.",
-  },
-  {
-    subject: "polish",
-    topic: "Dłuższa wypowiedź: plan przed pisaniem",
-    examContext: "W wypracowaniu oceniane są m.in. realizacja tematu, elementy twórcze albo retoryczne, kompetencje literackie, kompozycja, styl, język, ortografia i interpunkcja.",
-    learn: [
-      "Nie zaczynaj od pisania całego tekstu.",
-      "Najpierw zrób plan: teza, argumenty, przykłady, zakończenie.",
-      "Każdy akapit powinien mieć jedną funkcję.",
-    ],
-    strategy: "Plan minimum: 1) stanowisko, 2) argument z lektury, 3) drugi argument, 4) wniosek.",
-    example: "Temat: Czy warto pomagać słabszym? Teza: Warto, bo pomoc buduje wspólnotę i pokazuje odpowiedzialność.",
-    task: "Napisz tylko tezę do tematu: Czy odwaga jest ważniejsza niż siła?",
-    answer: "Przykład: Odwaga jest ważniejsza niż siła, ponieważ pozwala człowiekowi postąpić właściwie mimo strachu.",
-    hint: "Teza to jedno zdanie z jasnym stanowiskiem.",
-  },
-  {
-    subject: "math",
-    topic: "Diagramy, dane i ułamki",
-    examContext: "W matematyce pojawiają się zadania z odczytywaniem danych z diagramów i opisywaniem części całości ułamkiem.",
-    learn: [
-      "Najpierw odczytaj wszystkie dane.",
-      "Potem sprawdź, o jaką część pyta zadanie.",
-      "Ułamek zapisuje relację: część / całość.",
-    ],
-    strategy: "Pytanie o część: liczba wybranych elementów dzielona przez liczbę wszystkich elementów.",
-    example: "Jeśli w klasie 6 osób wybrało piłkę, a wszystkich jest 24, to część klasy to 6/24 = 1/4.",
-    task: "W grupie jest 20 uczniów. 5 wybrało matematykę jako ulubiony przedmiot. Jaką część grupy stanowią?",
-    answer: "5/20 = 1/4.",
-    hint: "Część to 5, całość to 20.",
-  },
-  {
-    subject: "math",
-    topic: "Kolejność działań i potęgi",
-    examContext: "Egzamin sprawdza sprawność rachunkową: kolejność działań, kwadraty, sześciany i działania na potęgach.",
-    learn: [
-      "Najpierw nawiasy.",
-      "Potem potęgi.",
-      "Potem mnożenie i dzielenie, a na końcu dodawanie i odejmowanie.",
-    ],
-    strategy: "Nie licz od lewej do prawej, jeśli w działaniu są potęgi albo nawiasy.",
-    example: "2 + 3² = 2 + 9 = 11. Nie 5².",
-    task: "Oblicz: 4 + 2² · 3",
-    answer: "2² = 4, potem 4 · 3 = 12, potem 4 + 12 = 16.",
-    hint: "Najpierw potęga, potem mnożenie.",
-  },
-  {
-    subject: "math",
-    topic: "Ułamki dziesiętne w zadaniu tekstowym",
-    examContext: "W zadaniach praktycznych trzeba połączyć obliczenia z treścią zadania. Ważne jest zapisanie, co oznacza wynik.",
-    learn: [
-      "Najpierw wypisz dane.",
-      "Potem wybierz działanie.",
-      "Na końcu odpowiedz pełnym zdaniem.",
-    ],
-    strategy: "Dane → działanie → wynik → odpowiedź z jednostką.",
-    example: "3 bilety po 4,50 zł kosztują 3 · 4,50 = 13,50 zł.",
-    task: "Jedna bułka kosztuje 1,80 zł. Ile kosztują 4 bułki?",
-    answer: "4 · 1,80 zł = 7,20 zł.",
-    hint: "To jest powtarzanie tej samej ceny 4 razy.",
-  },
-  {
-    subject: "math",
-    topic: "Algebra: podstawianie i redukcja",
-    examContext: "Na egzaminie pojawiają się wyrażenia algebraiczne: obliczanie wartości i redukowanie wyrazów podobnych.",
-    learn: [
-      "Litera oznacza liczbę.",
-      "Wyrazy podobne mają tę samą literę w tej samej potędze.",
-      "Przy podstawianiu najpierw wpisz liczbę za literę.",
-    ],
-    strategy: "Dla x = 3 wyrażenie 2x + 5 oznacza 2 · 3 + 5.",
-    example: "2x + 5 dla x = 3: 2 · 3 + 5 = 11.",
-    task: "Oblicz wartość wyrażenia 3x - 2 dla x = 4.",
-    answer: "3 · 4 - 2 = 12 - 2 = 10.",
-    hint: "Zamień x na 4.",
-  },
-  {
-    subject: "math",
-    topic: "Geometria: kąty w trójkącie",
-    examContext: "W geometrii trzeba znać własności figur, np. sumę kątów w trójkącie i własności trójkąta równoramiennego.",
-    learn: [
-      "Suma kątów w każdym trójkącie to 180°.",
-      "W trójkącie równoramiennym kąty przy podstawie są równe.",
-      "Najpierw zapisz znane kąty, potem odejmij od 180°.",
-    ],
-    strategy: "Brakujący kąt = 180° - suma znanych kątów.",
-    example: "Jeśli kąty mają 50° i 60°, trzeci kąt to 180° - 110° = 70°.",
-    task: "W trójkącie dwa kąty mają 45° i 75°. Ile ma trzeci kąt?",
-    answer: "180° - 45° - 75° = 60°.",
-    hint: "Dodaj znane kąty i odejmij od 180°.",
-  },
-  {
-    subject: "english",
-    topic: "Listening: jak słuchać nagrania",
-    examContext: "W arkuszu z języka angielskiego zadania ze słuchania są odtwarzane dwukrotnie. To oznacza, że pierwsze słuchanie służy sensowi, a drugie sprawdzeniu szczegółów.",
-    learn: [
-      "Przed nagraniem przeczytaj odpowiedzi.",
-      "W pierwszym słuchaniu złap ogólny sens.",
-      "W drugim słuchaniu potwierdź konkretny szczegół.",
-    ],
-    strategy: "Nie tłumacz każdego słowa. Szukaj informacji potrzebnej do odpowiedzi.",
-    example: "Jeśli pytanie dotyczy ulubionego sportu, słuchaj nazw sportów i zdań typu I love / my favourite.",
-    task: "Usłyszysz zdanie: 'I sometimes go running, but I love swimming in summer.' Jaki sport jest najważniejszy dla mówiącej osoby?",
-    answer: "Swimming.",
-    hint: "Słowo 'love' jest mocniejszą wskazówką niż 'sometimes'.",
-  },
-  {
-    subject: "english",
-    topic: "Grammar: will, have to, don't have to",
-    examContext: "W zadaniach otwartych trzeba uzupełnić zdanie tak, aby zachować sens po polsku i poprawność gramatyczną po angielsku.",
-    learn: [
-      "Will używamy często do przyszłości.",
-      "Have to oznacza 'musieć'.",
-      "Don't have to oznacza 'nie musieć'.",
-    ],
-    strategy: "Najpierw rozpoznaj polski sens, potem dobierz konstrukcję po angielsku.",
-    example: "Oni skończą projekt: They will finish the project.",
-    task: "Przetłumacz fragment: 'nie musimy' w zdaniu: We ______ get up early this week.",
-    answer: "don't have to.",
-    hint: "Nie musimy to nie zakaz. To brak obowiązku.",
-  },
-  {
-    subject: "english",
-    topic: "E-mail egzaminacyjny: 3 informacje",
-    examContext: "W zadaniu pisemnym z angielskiego trzeba rozwinąć wszystkie podpunkty. Oceniane są: przekazanie informacji, spójność, zakres słownictwa i poprawność językowa.",
-    learn: [
-      "Najpierw wypisz trzy informacje z polecenia.",
-      "Każdą informację rozwiń w osobnym zdaniu.",
-      "Nie pisz bardzo krótko: osoba czytająca musi zrozumieć sytuację.",
-    ],
-    strategy: "Plan e-maila: greeting → reason → reaction → future contact → ending.",
-    example: "I have to leave the club because my family is moving to another city.",
-    task: "Napisz jedno zdanie po angielsku: Wyjaśnij, że odchodzisz z klubu, bo masz za dużo nauki.",
-    answer: "I have to leave the club because I have too much schoolwork.",
-    hint: "Użyj: I have to leave... because...",
-  },
+const CATEGORY_LABELS = {
+  all: "Wszystkie kategorie",
+  lektury: "Lektury",
+  czytanie: "Czytanie ze zrozumieniem",
+  gramatyka: "Gramatyka",
+  stylistyka: "Środki stylistyczne",
+  pisanie: "Wypowiedź pisemna",
+  procenty: "Procenty",
+  dzialania: "Liczby i działania",
+  algebra: "Algebra i równania",
+  geometria: "Geometria",
+  statystyka: "Statystyka i dane",
+  tekstowe: "Zadania tekstowe",
+  grammar: "Grammar",
+  vocabulary: "Vocabulary",
+  reading: "Reading",
+  functions: "Functions",
+  writing: "Writing",
+};
+
+function shuffleOptions(correct, wrongs, seed) {
+  const arr = [correct, ...wrongs.slice(0, 3)].map((text, idx) => ({ text: String(text), isCorrect: idx === 0 }));
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = (seed + i * 7) % (i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return { options: arr.map((x) => x.text), correctIndex: arr.findIndex((x) => x.isCorrect) };
+}
+
+function makeQuestion({ id, subject, category, level = 1, intro, rule, question, correct, wrongs, explanation, source = "Mentor8" }) {
+  const mixed = shuffleOptions(correct, wrongs, id);
+  return {
+    id,
+    subject,
+    category,
+    level,
+    intro,
+    rule,
+    question,
+    options: mixed.options,
+    correctIndex: mixed.correctIndex,
+    correctAnswer: String(correct),
+    explanation,
+    source,
+  };
+}
+
+const polishLiterature = [
+  { q: "Kto był liderem chłopców z Placu Broni?", c: "Boka", w: ["Nemeczek", "Geréb", "Feri Acz"], e: "Nemeczek nie był liderem grupy. Liderem chłopców z Placu Broni był Boka. Nemeczek był najmłodszy i najsłabszy fizycznie, ale pokazał odwagę i lojalność." },
+  { q: "Kto napisał Chłopców z Placu Broni?", c: "Ferenc Molnár", w: ["Henryk Sienkiewicz", "Adam Mickiewicz", "Aleksander Fredro"], e: "Autorem Chłopców z Placu Broni jest Ferenc Molnár. To ważne, bo błąd rzeczowy przy lekturze może kosztować punkty." },
+  { q: "Która cecha najlepiej opisuje Nemeczka?", c: "lojalność", w: ["chciwość", "zarozumiałość", "obojętność"], e: "Nemeczek jest przykładem bohatera lojalnego. Mimo słabości fizycznej poświęca się dla grupy." },
+  { q: "Kto jest autorem Kamieni na szaniec?", c: "Aleksander Kamiński", w: ["Juliusz Słowacki", "Jan Kochanowski", "Sławomir Mrożek"], e: "Kamienie na szaniec napisał Aleksander Kamiński. Lektura dotyczy m.in. przyjaźni, odwagi i służby w czasie wojny." },
+  { q: "Który bohater Kamieni na szaniec nosił pseudonim Rudy?", c: "Jan Bytnar", w: ["Tadeusz Zawadzki", "Aleksy Dawidowski", "Zośka"], e: "Rudy to Jan Bytnar. Zośka to Tadeusz Zawadzki, a Alek to Aleksy Dawidowski." },
+  { q: "Kto napisał Zemstę?", c: "Aleksander Fredro", w: ["Adam Mickiewicz", "Bolesław Prus", "Henryk Sienkiewicz"], e: "Zemsta to komedia Aleksandra Fredry. Warto pamiętać gatunek i konflikt Cześnika z Rejentem." },
+  { q: "Kto w Zemście jest przeciwnikiem Cześnika?", c: "Rejent", w: ["Papkin", "Wacław", "Dyndalski"], e: "Główny konflikt w Zemście to spór Cześnika z Rejentem. Papkin jest postacią komiczną, ale nie głównym przeciwnikiem Cześnika." },
+  { q: "Kto jest autorem Pana Tadeusza?", c: "Adam Mickiewicz", w: ["Juliusz Słowacki", "Aleksander Kamiński", "Ferenc Molnár"], e: "Pan Tadeusz to epopeja narodowa Adama Mickiewicza. To jedna z kluczowych lektur." },
+  { q: "Jakim gatunkiem literackim jest Pan Tadeusz?", c: "epopeja", w: ["komedia", "nowela", "ballada"], e: "Pan Tadeusz jest epopeją. Utwór pokazuje szeroki obraz życia społeczności i ważne sprawy narodowe." },
+  { q: "Kto napisał Małego Księcia?", c: "Antoine de Saint-Exupéry", w: ["Ferenc Molnár", "Charles Dickens", "Aleksander Fredro"], e: "Małego Księcia napisał Antoine de Saint-Exupéry. Utwór dotyczy m.in. przyjaźni, odpowiedzialności i dorastania." },
+  { q: "Co symbolizuje róża w Małym Księciu?", c: "odpowiedzialną miłość", w: ["wojnę", "pieniądze", "zdradę"], e: "Róża jest dla Małego Księcia kimś wyjątkowym, bo poświęcił jej czas. Symbolizuje więź i odpowiedzialność." },
+  { q: "Kto napisał Latarnika?", c: "Henryk Sienkiewicz", w: ["Bolesław Prus", "Adam Mickiewicz", "Aleksander Fredro"], e: "Latarnik to nowela Henryka Sienkiewicza. Ważny motyw to tęsknota za ojczyzną." },
+  { q: "Jak nazywa się bohater Latarnika?", c: "Skawiński", w: ["Rzecki", "Boka", "Rejent"], e: "Bohaterem Latarnika jest Skawiński. Jego historia pokazuje tęsknotę emigranta za krajem." },
+  { q: "Kto napisał Balladynę?", c: "Juliusz Słowacki", w: ["Adam Mickiewicz", "Aleksander Fredro", "Bolesław Prus"], e: "Balladynę napisał Juliusz Słowacki. To dramat, w którym ważne są motywy winy, kary i żądzy władzy." },
+  { q: "Co doprowadza Balladynę do zbrodni?", c: "żądza władzy", w: ["lenistwo", "nieśmiałość", "ubóstwo języka"], e: "Balladyna popełnia zbrodnie, bo chce zdobyć władzę i pozycję. To ważny motyw interpretacyjny." },
 ];
 
-function generateCompressedPlan(days) {
-  const clamped = Math.max(5, Math.min(30, Number(days) || 30));
-  const mode = clamped <= 5 ? "exam" : clamped <= 10 ? "intense" : clamped <= 20 ? "balanced" : "normal";
-  return Array.from({ length: clamped }, (_, i) => {
-    const missionIndex = Math.floor((i / clamped) * BASE_MISSIONS.length);
-    return { day: i + 1, mode, mission: BASE_MISSIONS[missionIndex % BASE_MISSIONS.length] };
-  });
+const polishGrammar = [
+  ["Które zdanie jest wypowiedzeniem wielokrotnie złożonym?", "Kiedy wróciłem do domu, mama czytała książkę, a brat odrabiał lekcje.", ["Pada deszcz.", "Lubię książki.", "Uczeń pisze."], "Wypowiedzenie wielokrotnie złożone ma więcej niż dwa orzeczenia lub kilka zdań składowych."],
+  ["Który związek frazeologiczny oznacza: ujawnić tajemnicę?", "puścić farbę", ["mieć muchy w nosie", "wziąć nogi za pas", "rzucać grochem o ścianę"], "Puścić farbę oznacza powiedzieć coś, co miało pozostać tajemnicą."],
+  ["Który wyraz jest rzeczownikiem?", "odwaga", ["odważny", "odważnie", "odważyć"], "Rzeczownik nazywa osoby, rzeczy, zjawiska lub pojęcia, np. odwaga."],
+  ["Który wyraz jest czasownikiem?", "czyta", ["czytelny", "czytanie", "czytelnik"], "Czasownik nazywa czynność lub stan, np. czyta."],
+  ["Które zdanie zawiera porównanie?", "Był szybki jak wiatr.", ["Wiatr śpiewał w kominie.", "Dom milczał.", "Słońce zasnęło."], "Porównanie zwykle zawiera słowa: jak, niczym, jakby."],
+  ["Które zdanie zawiera przenośnię?", "Morze gwiazd świeciło nad miastem.", ["Mam trzy książki.", "Kot siedzi na krześle.", "Idę do szkoły."], "Przenośnia nadaje wyrazom znaczenie niedosłowne."],
+];
+
+const englishItems = [
+  ["Which sentence is in Present Simple?", "She plays tennis every Monday.", ["She is playing now.", "She played yesterday.", "She will play tomorrow."], "Present Simple opisuje czynności powtarzalne, np. every Monday."],
+  ["Choose the correct past form: go", "went", ["goed", "goes", "going"], "Czasownik go jest nieregularny: go – went – gone."],
+  ["Choose the correct sentence.", "I don't have to get up early today.", ["I mustn't to get up early today.", "I doesn't have to get up early today.", "I not have to get up early today."], "Don't have to oznacza: nie muszę. Po I używamy don't."],
+  ["Complete: I'm sure they ___ the project next Friday.", "will finish", ["finish yesterday", "finished", "are finish"], "Next Friday wskazuje na przyszłość. Używamy will finish."],
+  ["What does 'lake' mean in Polish?", "jezioro", ["góra", "rzeka", "las"], "Lake to jezioro. W transkrypcji dziewczyna mówi o wakacjach by the lake."],
+  ["What is a good opening for an informal email?", "Hi Mike,", ["Dear Sir or Madam,", "Yours faithfully,", "Best regards only"], "Do kolegi piszemy stylem nieformalnym, np. Hi Mike."],
+  ["Which word means 'kontynuować'?", "continue", ["leave", "break", "forget"], "Continue = kontynuować. Przydatne w zadaniu o utrzymaniu kontaktu."],
+  ["Which answer is a reaction to bad news?", "I'm sorry to hear that.", ["You're welcome.", "Here you are.", "Good appetite."], "I'm sorry to hear that używamy, gdy reagujemy na przykrą wiadomość."],
+  ["Which sentence is grammatically correct?", "She has lived here for two years.", ["She live here since two years.", "She lives here from two years.", "She living here for two years."], "For two years łączy się często z Present Perfect: has lived."],
+  ["Choose the best translation: nie musimy", "we don't have to", ["we mustn't", "we shouldn't to", "we haven't to"], "Don't have to oznacza brak obowiązku. Mustn't oznacza zakaz."],
+];
+
+function generateMathQuestions(startId) {
+  const out = [];
+  let id = startId;
+  for (let a = 20; a <= 250; a += 10) {
+    for (const p of [10, 20, 25, 50]) {
+      const correct = (a * p) / 100;
+      out.push(makeQuestion({ id: id++, subject: "math", category: "procenty", intro: "W procentach najpierw zamieniamy procent na ułamek albo korzystamy ze znanych wartości.", rule: `${p}% z liczby oznacza ${p}/100 tej liczby.`, question: `Ile to ${p}% z ${a}?`, correct, wrongs: [correct + 5, Math.max(0, correct - 5), correct * 2], explanation: `${p}% z ${a} = ${p}/100 × ${a} = ${correct}. Jeśli odpowiedź była inna, błąd najczęściej polegał na pomyleniu procentu z liczbą.` }));
+    }
+  }
+  for (let a = 2; a <= 18; a++) {
+    const b = a + 3;
+    const expr = `${a} + ${b} × 2`;
+    const correct = a + b * 2;
+    out.push(makeQuestion({ id: id++, subject: "math", category: "dzialania", intro: "W działaniach mieszanych obowiązuje kolejność działań.", rule: "Najpierw mnożenie i dzielenie, potem dodawanie i odejmowanie.", question: `Ile wynosi ${expr}?`, correct, wrongs: [(a + b) * 2, correct + 2, correct - 2], explanation: `Najpierw liczymy ${b} × 2 = ${b * 2}, potem dodajemy ${a}. Wynik to ${correct}.` }));
+  }
+  for (let x = 1; x <= 40; x++) {
+    const add = (x % 9) + 1;
+    const result = x + add;
+    out.push(makeQuestion({ id: id++, subject: "math", category: "algebra", intro: "Równanie rozwiązujemy tak, żeby zostawić x samo po jednej stronie.", rule: "Jeśli do x dodano liczbę, odejmij tę liczbę od obu stron.", question: `Rozwiąż równanie: x + ${add} = ${result}. Ile wynosi x?`, correct: x, wrongs: [result, add, x + 1], explanation: `Odejmujemy ${add} od obu stron: x = ${result} - ${add} = ${x}.` }));
+  }
+  for (let w = 3; w <= 20; w++) {
+    const h = w + 2;
+    out.push(makeQuestion({ id: id++, subject: "math", category: "geometria", intro: "Pole prostokąta liczymy ze wzoru: długość razy szerokość.", rule: "P = a × b.", question: `Prostokąt ma boki ${w} cm i ${h} cm. Jakie jest jego pole?`, correct: `${w * h} cm²`, wrongs: [`${2 * (w + h)} cm`, `${w + h} cm²`, `${w * h} cm`], explanation: `Pole to ${w} × ${h} = ${w * h} cm². Obwód byłby innym działaniem: 2 × (${w} + ${h}).` }));
+    out.push(makeQuestion({ id: id++, subject: "math", category: "geometria", intro: "Obwód to suma długości wszystkich boków.", rule: "Dla prostokąta O = 2a + 2b.", question: `Prostokąt ma boki ${w} cm i ${h} cm. Jaki jest obwód?`, correct: `${2 * (w + h)} cm`, wrongs: [`${w * h} cm²`, `${w + h} cm`, `${w * h} cm`], explanation: `Obwód to ${w} + ${h} + ${w} + ${h} = ${2 * (w + h)} cm.` }));
+  }
+  for (let n = 3; n <= 22; n++) {
+    const nums = [n, n + 2, n + 4];
+    const avg = n + 2;
+    out.push(makeQuestion({ id: id++, subject: "math", category: "statystyka", intro: "Średnia arytmetyczna to suma liczb podzielona przez ich liczbę.", rule: "Dodaj liczby i podziel przez ilość liczb.", question: `Jaka jest średnia liczb: ${nums.join(", ")}?`, correct: avg, wrongs: [avg + 1, avg - 1, nums.reduce((a,b)=>a+b,0)], explanation: `Suma to ${nums.reduce((a,b)=>a+b,0)}. Dzielimy przez 3, więc średnia to ${avg}.` }));
+  }
+  for (let price = 40; price <= 240; price += 20) {
+    const pct = price % 40 === 0 ? 25 : 10;
+    const discount = price * pct / 100;
+    const newPrice = price - discount;
+    out.push(makeQuestion({ id: id++, subject: "math", category: "tekstowe", intro: "W zadaniu tekstowym najpierw ustal, o co pytają, potem wybierz działanie.", rule: "Obniżka oznacza: cena początkowa minus wartość obniżki.", question: `Cena wynosiła ${price} zł. Obniżono ją o ${pct}%. Jaka jest nowa cena?`, correct: `${newPrice} zł`, wrongs: [`${discount} zł`, `${price + discount} zł`, `${price - pct} zł`], explanation: `${pct}% z ${price} zł to ${discount} zł. Nowa cena: ${price} - ${discount} = ${newPrice} zł.` }));
+  }
+  return out;
+}
+
+function generatePolishQuestions(startId) {
+  const out = [];
+  let id = startId;
+  for (let r = 0; r < 12; r++) {
+    polishLiterature.forEach((item) => out.push(makeQuestion({ id: id++, subject: "polish", category: "lektury", intro: "Na egzaminie z polskiego pytania o lektury sprawdzają konkretną wiedzę i rozumienie postaci.", rule: "Przy lekturach unikaj zgadywania. Błąd rzeczowy może kosztować punkt.", question: item.q, correct: item.c, wrongs: item.w, explanation: item.e })));
+  }
+  const readingStems = [
+    ["Co trzeba zrobić najpierw w pytaniu o szczegół z tekstu?", "znaleźć fragment w tekście", ["od razu zgadywać", "pisać najdłuższą odpowiedź", "pomijać polecenie"], "W pytaniu o szczegół najpierw szukamy fragmentu w tekście. Potem odpowiadamy własnymi słowami, jeśli polecenie tego wymaga."],
+    ["Co oznacza polecenie: uzasadnij odpowiedź?", "podaj powód lub argument", ["zaznacz losową literę", "przepisz tytuł", "napisz tylko tak/nie"], "Uzasadnienie wymaga wyjaśnienia, dlaczego odpowiedź jest poprawna."],
+    ["Co jest najlepszą strategią przy pytaniu P/F?", "sprawdzić każde zdanie osobno w tekście", ["zaznaczyć wszystko P", "zaznaczyć wszystko F", "wybrać odpowiedź po brzmieniu"], "W P/F każde zdanie sprawdzamy osobno. Jedno może być prawdziwe, drugie fałszywe."],
+    ["Czego nie wolno robić przy odpowiedzi własnymi słowami?", "kopiować długiego fragmentu bez potrzeby", ["odpowiadać jasno", "odnieść się do pytania", "użyć prostego zdania"], "Jeśli polecenie mówi: własnymi słowami, trzeba wyjaśnić sens, a nie przepisywać cały fragment."],
+  ];
+  for (let r = 0; r < 25; r++) {
+    readingStems.forEach((i) => out.push(makeQuestion({ id: id++, subject: "polish", category: "czytanie", intro: "Czytanie ze zrozumieniem polega na pracy z tekstem, nie na zgadywaniu.", rule: "Najpierw polecenie, potem fragment tekstu, potem odpowiedź.", question: i[0], correct: i[1], wrongs: i[2], explanation: i[3] })));
+  }
+  for (let r = 0; r < 16; r++) {
+    polishGrammar.forEach((i, idx) => out.push(makeQuestion({ id: id++, subject: "polish", category: idx < 4 ? "gramatyka" : "stylistyka", intro: idx < 4 ? "Gramatyka pomaga rozumieć budowę zdania i części mowy." : "Środki stylistyczne trzeba rozpoznawać po funkcji w tekście.", rule: idx < 4 ? "Zwróć uwagę na rolę wyrazu lub liczbę orzeczeń." : "Pytaj: czy to jest dosłowne, porównujące, czy obrazowe?", question: i[0], correct: i[1], wrongs: i[2], explanation: i[3] })));
+  }
+  const writing = [
+    ["Co musi mieć dobre ogłoszenie?", "konkretną informację: co, gdzie, kiedy i kontakt", ["same emocje bez faktów", "tylko tytuł", "same ozdobniki"], "Ogłoszenie ma być użyteczne. Czytelnik musi wiedzieć, czego dotyczy, gdzie/kiedy i co ma zrobić."],
+    ["Co jest potrzebne w rozprawce?", "teza i argumenty", ["tylko dialogi", "same opisy przyrody", "lista przypadkowych lektur"], "Rozprawka wymaga stanowiska i argumentów. Przykłady z lektur wzmacniają odpowiedź."],
+    ["Co jest ważne w opowiadaniu?", "wydarzenia, bohater i logiczna kolejność", ["same definicje", "same równania", "brak akcji"], "Opowiadanie musi mieć przebieg wydarzeń. Dobrze, gdy ma wstęp, rozwinięcie i zakończenie."],
+    ["Co oznacza spójność tekstu?", "zdania łączą się logicznie", ["każde zdanie jest o czymś innym", "brak akapitów zawsze daje spójność", "wystarczy dużo trudnych słów"], "Spójny tekst prowadzi czytelnika krok po kroku. Pomagają w tym akapity i wyrażenia łączące."],
+  ];
+  for (let r = 0; r < 25; r++) {
+    writing.forEach((i) => out.push(makeQuestion({ id: id++, subject: "polish", category: "pisanie", intro: "Wypowiedź pisemna jest oceniana nie tylko za treść, ale też kompozycję, styl, język, ortografię i interpunkcję.", rule: "Najpierw plan, potem pisanie. Jeden akapit = jedna część myśli.", question: i[0], correct: i[1], wrongs: i[2], explanation: i[3] })));
+  }
+  return out;
+}
+
+function generateEnglishQuestions(startId) {
+  const out = [];
+  let id = startId;
+  for (let r = 0; r < 18; r++) {
+    englishItems.forEach((i, idx) => out.push(makeQuestion({ id: id++, subject: "english", category: idx < 4 ? "grammar" : idx < 7 ? "vocabulary" : idx < 9 ? "functions" : "writing", intro: "W angielskim na egzaminie liczy się rozumienie sensu, a nie tłumaczenie każdego słowa.", rule: "Najpierw szukaj słowa-klucza albo czasu w zdaniu.", question: i[0], correct: i[1], wrongs: i[2], explanation: i[3] })));
+  }
+  const reading = [
+    ["In the listening text, what sport does the girl like most in summer?", "swimming", ["climbing", "running", "skiing"], "She says she loves spending summers by the lake and does a lot of swimming. Running is only sometimes, climbing is too tiring."],
+    ["If someone says: I can take care of the technical stuff, what are they offering?", "help", ["complaint", "refusal", "invitation"], "Take care of the technical stuff means the person offers practical help."],
+    ["What does 'too tiring' mean?", "zbyt męczące", ["bardzo tanie", "zbyt łatwe", "bardzo smaczne"], "Tiring means męczący. Too tiring means zbyt męczące."],
+    ["What is the best answer to: Do you want me to help you?", "Yes, please. That would be great.", ["I am twelve.", "It is under the table.", "At 7 p.m. yesterday."], "Pytanie dotyczy propozycji pomocy, więc odpowiedź powinna przyjąć albo odrzucić pomoc."],
+  ];
+  for (let r = 0; r < 25; r++) {
+    reading.forEach((i) => out.push(makeQuestion({ id: id++, subject: "english", category: "reading", intro: "W zadaniach na rozumienie tekstu szukaj sensu wypowiedzi i słów-kluczy.", rule: "Nie wybieraj odpowiedzi tylko dlatego, że zawiera słowo z tekstu. Sprawdź sens.", question: i[0], correct: i[1], wrongs: i[2], explanation: i[3] })));
+  }
+  return out;
+}
+
+function buildBank() {
+  let bank = [];
+  bank = bank.concat(generateMathQuestions(1));
+  bank = bank.concat(generatePolishQuestions(3001));
+  bank = bank.concat(generateEnglishQuestions(6001));
+  // Ensure exactly 1000 questions by cycling deterministic variants if needed.
+  const base = bank.slice();
+  let idx = 0;
+  while (bank.length < 1000) {
+    const q = base[idx % base.length];
+    bank.push({ ...q, id: 9000 + bank.length, question: q.question, explanation: q.explanation });
+    idx++;
+  }
+  return bank.slice(0, 1000);
 }
 
 function speak(text, enabled) {
   if (!enabled || typeof window === "undefined" || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "pl-PL";
-  utterance.rate = 0.86;
-  utterance.pitch = 0.95;
-  window.speechSynthesis.speak(utterance);
-}
-
-function getLevel(doneCount) {
-  if (doneCount >= 20) return "Mistrz egzaminu";
-  if (doneCount >= 10) return "Strateg";
-  if (doneCount >= 5) return "Odkrywca";
-  return "Start";
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "pl-PL";
+  u.rate = 0.86;
+  u.pitch = 1;
+  window.speechSynthesis.speak(u);
 }
 
 export default function Home() {
-  const [days, setDays] = useState(30);
-  const [plan, setPlan] = useState(() => generateCompressedPlan(30));
-  const [activeDay, setActiveDay] = useState(1);
-  const [step, setStep] = useState(0);
-  const [voiceOn, setVoiceOn] = useState(false);
-  const [view, setView] = useState("student");
-  const [showAnswer, setShowAnswer] = useState(false);
-  const [events, setEvents] = useState({ help: 0, idle: 0, audio: 0, done: 0 });
+  const questions = useMemo(() => buildBank(), []);
+  const [subject, setSubject] = useState("all");
+  const [category, setCategory] = useState("all");
+  const [current, setCurrent] = useState(null);
+  const [selected, setSelected] = useState(null);
+  const [voice, setVoice] = useState(false);
+  const [stats, setStats] = useState({ correct: 0, total: 0 });
+  const [showLesson, setShowLesson] = useState(true);
+
+  const filtered = questions.filter((q) => (subject === "all" || q.subject === subject) && (category === "all" || q.category === category));
+  const categories = ["all", ...Array.from(new Set(questions.filter((q)=>subject === "all" || q.subject === subject).map((q) => q.category)))];
+
+  function nextQuestion() {
+    const list = filtered.length ? filtered : questions;
+    const q = list[Math.floor(Math.random() * list.length)];
+    setCurrent(q);
+    setSelected(null);
+    setShowLesson(true);
+    speak(`${q.intro}. ${q.rule}. ${q.question}`, voice);
+  }
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("mentor8-state");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.days) setDays(parsed.days);
-        if (parsed.activeDay) setActiveDay(parsed.activeDay);
-        if (parsed.voiceOn !== undefined) setVoiceOn(parsed.voiceOn);
-        if (parsed.events) setEvents(parsed.events);
-        if (parsed.days) setPlan(generateCompressedPlan(parsed.days));
-      }
-    } catch (_) {}
-  }, []);
+    const saved = typeof window !== "undefined" ? localStorage.getItem("mentor8_stats_v4") : null;
+    if (saved) setStats(JSON.parse(saved));
+    const q = questions[Math.floor(Math.random() * questions.length)];
+    setCurrent(q);
+  }, [questions]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem("mentor8-state", JSON.stringify({ days, activeDay, voiceOn, events }));
-    } catch (_) {}
-  }, [days, activeDay, voiceOn, events]);
-
-  const current = plan[Math.min(activeDay - 1, plan.length - 1)] || plan[0];
-  const mission = current.mission;
-  const doneCount = events.done || 0;
-  const level = getLevel(doneCount);
-
-  const lessonSteps = useMemo(() => [
-    `Misja: ${mission.topic}`,
-    `Kontekst egzaminacyjny: ${mission.examContext}`,
-    `Nauka 1: ${mission.learn[0]}`,
-    `Nauka 2: ${mission.learn[1]}`,
-    `Nauka 3: ${mission.learn[2]}`,
-    `Strategia: ${mission.strategy}`,
-    `Przykład: ${mission.example}`,
-    `Zadanie: ${mission.task}`,
-  ], [mission]);
-
-  const currentText = lessonSteps[Math.min(step, lessonSteps.length - 1)];
-
-  function nextStep() {
-    setShowAnswer(false);
-    if (step < lessonSteps.length - 1) {
-      const next = step + 1;
-      setStep(next);
-      speak(lessonSteps[next], voiceOn);
-    } else {
-      setEvents((e) => ({ ...e, done: (e.done || 0) + 1 }));
-      if (activeDay < plan.length) setActiveDay(activeDay + 1);
-      setStep(0);
-      speak("Koniec tej misji. To wystarczy na teraz.", voiceOn);
-    }
+  function choose(i) {
+    if (selected !== null) return;
+    setSelected(i);
+    const ok = i === current.correctIndex;
+    const nextStats = { correct: stats.correct + (ok ? 1 : 0), total: stats.total + 1 };
+    setStats(nextStats);
+    localStorage.setItem("mentor8_stats_v4", JSON.stringify(nextStats));
+    speak(`${ok ? "Dobrze." : "Jeszcze nie."} Poprawna odpowiedź to: ${current.correctAnswer}. ${current.explanation}`, voice);
   }
 
-  function startMission() {
-    setStep(0);
-    setShowAnswer(false);
-    speak(lessonSteps[0], voiceOn);
-  }
-
-  function help() {
-    setEvents((e) => ({ ...e, help: (e.help || 0) + 1 }));
-    speak(mission.hint, voiceOn);
-    alert(`Pomoc: ${mission.hint}`);
-  }
-
-  function repeat() {
-    setEvents((e) => ({ ...e, audio: (e.audio || 0) + 1 }));
-    speak(currentText, voiceOn);
-  }
-
-  function applyCompression() {
-    const nextPlan = generateCompressedPlan(days);
-    setPlan(nextPlan);
-    setActiveDay(1);
-    setStep(0);
-  }
-
-  const modeLabel = current.mode === "exam" ? "Tryb egzaminowy" : current.mode === "intense" ? "Tryb intensywny" : current.mode === "balanced" ? "Tryb zbalansowany" : "Tryb normalny";
+  if (!current) return null;
+  const answered = selected !== null;
+  const ok = answered && selected === current.correctIndex;
 
   return (
     <main className="page">
-      <style jsx>{`
-        .page { min-height: 100vh; background: radial-gradient(circle at top left, #18233f, #08111f 50%, #05080f); color: #e5f0ff; font-family: Inter, Arial, sans-serif; padding: 24px; }
-        .shell { max-width: 1120px; margin: 0 auto; }
-        .top { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-bottom:24px; }
-        .brand { display:flex; flex-direction:column; gap:4px; }
-        .brand h1 { margin:0; font-size: 34px; letter-spacing:-0.04em; }
-        .brand p { margin:0; color:#9db2d3; }
-        .nav { display:flex; gap:10px; flex-wrap:wrap; }
-        button, input { font: inherit; }
-        .btn { border:1px solid rgba(148,163,184,.25); background:rgba(15,23,42,.75); color:#e5f0ff; padding:12px 16px; border-radius:16px; cursor:pointer; }
-        .btn:hover { background:rgba(30,41,59,.9); }
-        .primary { background: linear-gradient(135deg, #2dd4bf, #3b82f6); border:none; color:#02111f; font-weight:800; }
-        .danger { background:rgba(127,29,29,.35); }
-        .grid { display:grid; grid-template-columns: 1.2fr .8fr; gap:20px; }
-        .card { background:rgba(15,23,42,.76); border:1px solid rgba(148,163,184,.18); border-radius:28px; padding:24px; box-shadow: 0 16px 50px rgba(0,0,0,.22); }
-        .mission { min-height: 430px; display:flex; flex-direction:column; justify-content:space-between; }
-        .small { color:#9db2d3; font-size:14px; }
-        .pill { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; background:rgba(45,212,191,.12); color:#99f6e4; font-size:14px; margin-right:8px; margin-bottom:8px; }
-        .lessonText { font-size:26px; line-height:1.35; letter-spacing:-0.02em; margin:24px 0; }
-        .context { background:rgba(59,130,246,.12); border:1px solid rgba(59,130,246,.25); padding:14px; border-radius:18px; color:#bfdbfe; margin-top:14px; }
-        .controls { display:flex; flex-wrap:wrap; gap:12px; margin-top:18px; }
-        .map { display:grid; grid-template-columns: repeat(10, 1fr); gap:8px; margin-top:16px; }
-        .dot { height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:rgba(148,163,184,.14); color:#94a3b8; font-size:13px; }
-        .dot.active { background:#2dd4bf; color:#031018; font-weight:800; }
-        .dot.done { background:rgba(34,197,94,.35); color:#bbf7d0; }
-        .settingRow { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid rgba(148,163,184,.12); }
-        .input { width:90px; padding:10px; border-radius:12px; border:1px solid rgba(148,163,184,.3); background:#07111f; color:white; }
-        .answer { margin-top:16px; padding:16px; border-radius:18px; background:rgba(34,197,94,.12); color:#bbf7d0; border:1px solid rgba(34,197,94,.25); }
-        .source { font-size:13px; color:#8ea3c2; line-height:1.45; }
-        @media(max-width: 860px) { .grid { grid-template-columns: 1fr; } .top { flex-direction:column; align-items:flex-start; } .lessonText { font-size:22px; } }
-      `}</style>
-      <div className="shell">
+      <section className="shell">
         <header className="top">
-          <div className="brand">
-            <h1>Mentor8</h1>
-            <p>AI edukator egzaminacyjny: więcej kontekstu, mniej chaosu.</p>
+          <div>
+            <div className="badge">Mentor8 • Quiz v4</div>
+            <h1>Misja: jedno pytanie, jasny kontekst</h1>
+            <p className="sub">Bank 1000 pytań z polskiego, matematyki i angielskiego. Bez timera. Głos można wyłączyć.</p>
           </div>
-          <div className="nav">
-            <button className="btn" onClick={() => setView("student")}>Uczeń</button>
-            <button className="btn" onClick={() => setView("parent")}>Panel rodzica</button>
-            <button className="btn" onClick={() => setView("compressor")}>Kompresor</button>
-          </div>
+          <button className={voice ? "voice on" : "voice"} onClick={() => setVoice(!voice)}>{voice ? "Głos: ON" : "Głos: OFF"}</button>
         </header>
 
-        {view === "student" && (
-          <section className="grid">
-            <div className="card mission">
-              <div>
-                <span className="pill">Dzień {activeDay} z {plan.length}</span>
-                <span className="pill">{SUBJECTS[mission.subject]}</span>
-                <span className="pill">{modeLabel}</span>
-                <h2>{mission.topic}</h2>
-                <div className="context">{mission.examContext}</div>
-                <p className="lessonText">{currentText}</p>
-                {showAnswer && <div className="answer"><strong>Odpowiedź / wzór:</strong><br />{mission.answer}</div>}
-              </div>
-              <div className="controls">
-                <button className="btn primary" onClick={startMission}>▶ Start misji</button>
-                <button className="btn primary" onClick={nextStep}>Dalej</button>
-                <button className="btn" onClick={help}>Pomóż mi</button>
-                <button className="btn" onClick={() => setShowAnswer(!showAnswer)}>{showAnswer ? "Ukryj odpowiedź" : "Pokaż odpowiedź"}</button>
-                <button className="btn" onClick={repeat}>Powtórz głosem</button>
-              </div>
-            </div>
+        <section className="controls">
+          <label>Przedmiot
+            <select value={subject} onChange={(e)=>{setSubject(e.target.value); setCategory("all");}}>
+              {Object.entries(SUBJECTS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </label>
+          <label>Kategoria
+            <select value={category} onChange={(e)=>setCategory(e.target.value)}>
+              {categories.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c] || c}</option>)}
+            </select>
+          </label>
+          <div className="stats">Wynik: {stats.correct}/{stats.total}</div>
+        </section>
 
-            <aside className="card">
-              <h3>Ustawienia</h3>
-              <div className="settingRow">
-                <div>
-                  <strong>Głos</strong>
-                  <div className="small">Możesz całkowicie wyłączyć czytanie.</div>
-                </div>
-                <button className={voiceOn ? "btn primary" : "btn"} onClick={() => { window.speechSynthesis?.cancel(); setVoiceOn(!voiceOn); }}>
-                  {voiceOn ? "ON" : "OFF"}
-                </button>
-              </div>
-              <div className="settingRow">
-                <div>
-                  <strong>Poziom</strong>
-                  <div className="small">{level}</div>
-                </div>
-                <div>{doneCount * 10} XP</div>
-              </div>
-              <h3>Mapa</h3>
-              <div className="map">
-                {plan.map((p) => (
-                  <button key={p.day} className={`dot ${p.day === activeDay ? "active" : ""} ${p.day < activeDay ? "done" : ""}`} onClick={() => { setActiveDay(p.day); setStep(0); }}>
-                    {p.day}
-                  </button>
-                ))}
-              </div>
-            </aside>
-          </section>
-        )}
+        <section className="card">
+          <div className="meta">
+            <span>{SUBJECTS[current.subject]}</span>
+            <span>{CATEGORY_LABELS[current.category]}</span>
+            <span>Poziom {current.level}</span>
+          </div>
 
-        {view === "compressor" && (
-          <section className="card">
-            <h2>Kompresor materiału</h2>
-            <p className="small">Ustaw, ile dni zostało do egzaminu. System nie robi jednej długiej lekcji. Układa krótkie, merytoryczne misje z kontekstem.</p>
-            <div className="controls">
-              <input className="input" type="number" min="5" max="30" value={days} onChange={(e) => setDays(e.target.value)} />
-              <button className="btn primary" onClick={applyCompression}>Zastosuj plan</button>
-              <button className="btn" onClick={() => { setDays(30); setPlan(generateCompressedPlan(30)); setActiveDay(1); }}>Wróć do 30 dni</button>
+          {showLesson && (
+            <div className="lesson">
+              <h2>Zanim odpowiesz</h2>
+              <p><b>Kontekst:</b> {current.intro}</p>
+              <p><b>Zasada:</b> {current.rule}</p>
+              <button className="small" onClick={()=>setShowLesson(false)}>Rozumiem — pokaż tylko pytanie</button>
             </div>
-            <p>Tryb po zastosowaniu: <strong>{generateCompressedPlan(days)[0]?.mode}</strong></p>
-          </section>
-        )}
+          )}
 
-        {view === "parent" && (
-          <section className="grid">
-            <div className="card">
-              <h2>Panel rodzica</h2>
-              <p>Ukończone misje: {events.done || 0}</p>
-              <p>Użycia pomocy: {events.help || 0}</p>
-              <p>Użycia audio: {events.audio || 0}</p>
-              <p>Aktualny dzień: {activeDay} / {plan.length}</p>
-              <p>Rekomendacja: jeśli dziecko traci zainteresowanie, utrzymaj głos OFF albo używaj go tylko do powtórzenia kroku. Nie przedłużaj sesji po ukończeniu misji.</p>
-              <button className="btn danger" onClick={() => { setEvents({help:0,idle:0,audio:0,done:0}); setActiveDay(1); setStep(0); }}>Reset postępów</button>
+          <h2 className="question">{current.question}</h2>
+          <div className="options">
+            {current.options.map((op, i) => {
+              const cls = answered ? (i === current.correctIndex ? "option correct" : i === selected ? "option wrong" : "option") : "option";
+              return <button key={i} className={cls} onClick={()=>choose(i)}>{String.fromCharCode(65+i)}. {op}</button>
+            })}
+          </div>
+
+          {answered && (
+            <div className={ok ? "feedback good" : "feedback bad"}>
+              <h3>{ok ? "Odpowiedź poprawna" : "Jeszcze nie — spokojnie"}</h3>
+              <p><b>Poprawna odpowiedź:</b> {current.correctAnswer}</p>
+              <p>{current.explanation}</p>
             </div>
-            <div className="card source">
-              <h3>Na czym oparto treści?</h3>
-              <p>Polski: czytanie poleceń, lektury obowiązkowe, argumentacja i kryteria dłuższej wypowiedzi.</p>
-              <p>Matematyka: dane/diagramy, ułamki, kolejność działań, potęgi, algebra, zadania tekstowe i geometria.</p>
-              <p>Angielski: słuchanie, gramatyka użytkowa i e-mail egzaminacyjny.</p>
-            </div>
-          </section>
-        )}
-      </div>
+          )}
+
+          <div className="actions">
+            <button onClick={nextQuestion}>Losuj następne pytanie</button>
+            <button className="secondary" onClick={()=>speak(`${current.intro}. ${current.rule}. ${current.question}`, voice)}>Odsłuchaj pytanie</button>
+          </div>
+        </section>
+      </section>
+      <style jsx>{`
+        .page{min-height:100vh;background:radial-gradient(circle at top left,#172554,#020617 55%);color:#e5e7eb;font-family:Inter,Arial,sans-serif;padding:24px;}
+        .shell{max-width:1050px;margin:0 auto;}
+        .top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px;}
+        h1{font-size:34px;margin:8px 0 8px;line-height:1.1}.sub{color:#a7b0c0;max-width:720px}.badge{color:#93c5fd;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:13px}
+        .voice,.controls select,.actions button,.small{border:1px solid #334155;background:#0f172a;color:#e5e7eb;border-radius:14px;padding:13px 16px;font-size:15px;cursor:pointer}.voice.on{background:#065f46;border-color:#10b981}.controls{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;margin:18px 0;align-items:end}.controls label{display:flex;flex-direction:column;gap:7px;color:#cbd5e1}.stats{background:#111827;border:1px solid #334155;border-radius:14px;padding:14px 18px;color:#d1fae5}.card{background:rgba(15,23,42,.88);border:1px solid #334155;border-radius:26px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.3)}.meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.meta span{background:#1e293b;color:#bfdbfe;border:1px solid #334155;border-radius:999px;padding:7px 11px;font-size:13px}.lesson{background:#0b1220;border:1px solid #1d4ed8;border-radius:20px;padding:18px;margin-bottom:18px}.lesson h2{margin-top:0}.lesson p{font-size:17px;line-height:1.55}.small{padding:10px 13px;background:#1e3a8a}.question{font-size:26px;line-height:1.3;margin:22px 0}.options{display:grid;grid-template-columns:1fr 1fr;gap:14px}.option{text-align:left;border:1px solid #475569;background:#111827;color:white;border-radius:18px;padding:18px;font-size:18px;cursor:pointer}.option:hover{border-color:#93c5fd}.option.correct{background:#064e3b;border-color:#10b981}.option.wrong{background:#7f1d1d;border-color:#ef4444}.feedback{margin-top:20px;border-radius:20px;padding:18px;line-height:1.5}.feedback.good{background:#052e2b;border:1px solid #10b981}.feedback.bad{background:#2a1620;border:1px solid #fb7185}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.actions button{background:#2563eb;border:0;color:white;border-radius:16px;padding:15px 18px;font-size:16px;cursor:pointer}.actions .secondary{background:#1f2937;border:1px solid #475569}@media(max-width:760px){.top{flex-direction:column}.controls{grid-template-columns:1fr}.options{grid-template-columns:1fr}.card{padding:20px}.question{font-size:22px}h1{font-size:28px}}
+      `}</style>
     </main>
   );
 }
