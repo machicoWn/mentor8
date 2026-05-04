@@ -1,326 +1,407 @@
 import { useEffect, useMemo, useState } from "react";
 
 const SUBJECTS = {
-  all: "Wszystko",
-  polish: "Polski",
+  all: "Wszystkie",
+  polish: "Język polski",
   math: "Matematyka",
-  english: "Angielski",
+  english: "Język angielski"
 };
 
-const CATEGORY_LABELS = {
-  all: "Wszystkie kategorie",
-  lektury: "Lektury",
-  czytanie: "Czytanie ze zrozumieniem",
-  gramatyka: "Gramatyka",
-  stylistyka: "Środki stylistyczne",
-  pisanie: "Wypowiedź pisemna",
-  procenty: "Procenty",
-  dzialania: "Liczby i działania",
-  algebra: "Algebra i równania",
-  geometria: "Geometria",
-  statystyka: "Statystyka i dane",
-  tekstowe: "Zadania tekstowe",
-  grammar: "Grammar",
-  vocabulary: "Vocabulary",
-  reading: "Reading",
-  functions: "Functions",
-  writing: "Writing",
+const CATEGORIES = {
+  all: ["Wszystkie"],
+  polish: ["Lektury", "Czytanie ze zrozumieniem", "Gramatyka", "Środki stylistyczne", "Pisanie"],
+  math: ["Procenty i dane", "Działania", "Algebra", "Geometria", "Zadania tekstowe", "Prawdopodobieństwo"],
+  english: ["Listening / rozumienie", "Reading", "Grammar", "Functions", "Vocabulary", "Writing"]
 };
 
-function shuffleOptions(correct, wrongs, seed) {
-  const arr = [correct, ...wrongs.slice(0, 3)].map((text, idx) => ({ text: String(text), isCorrect: idx === 0 }));
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = (seed + i * 7) % (i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+const LECTURES = [
+  { title: "Chłopcy z Placu Broni", author: "Ferenc Molnár", fact: "Boka był liderem chłopców, a Nemeczek był najmłodszy i bardzo lojalny.", q: "Kto był liderem chłopców z Placu Broni?", answer: "Boka", wrong: ["Nemeczek", "Geréb", "Feri Acz"] },
+  { title: "Zemsta", author: "Aleksander Fredro", fact: "Papkin dużo mówił o odwadze, ale często zachowywał się tchórzliwie.", q: "Który bohater Zemsty często udawał wielkiego odważnego rycerza?", answer: "Papkin", wrong: ["Rejent", "Cześnik", "Wacław"] },
+  { title: "Kamienie na szaniec", author: "Aleksander Kamiński", fact: "Rudy, Alek i Zośka pokazują przyjaźń, odwagę i poświęcenie w czasie wojny.", q: "Która lektura opowiada o Rudym, Alku i Zośce?", answer: "Kamienie na szaniec", wrong: ["Balladyna", "Latarnik", "Opowieść wigilijna"] },
+  { title: "Mały Książę", author: "Antoine de Saint-Exupéry", fact: "Lis uczy Małego Księcia, że najważniejsze relacje wymagają odpowiedzialności.", q: "Kto mówi Małemu Księciu o oswajaniu?", answer: "Lis", wrong: ["Król", "Latarnik", "Geograf"] },
+  { title: "Opowieść wigilijna", author: "Charles Dickens", fact: "Scrooge zmienia się po spotkaniach z duchami i zaczyna dostrzegać innych ludzi.", q: "Który bohater przechodzi przemianę w Opowieści wigilijnej?", answer: "Ebenezer Scrooge", wrong: ["Nemeczek", "Papkin", "Bilbo Baggins"] },
+  { title: "Balladyna", author: "Juliusz Słowacki", fact: "Balladyna popełnia zbrodnię z żądzy władzy i ponosi karę.", q: "Która bohaterka zabija siostrę, aby zdobyć władzę?", answer: "Balladyna", wrong: ["Alina", "Klara", "Róża"] },
+  { title: "Latarnik", author: "Henryk Sienkiewicz", fact: "Skawiński to emigrant, który tęskni za ojczyzną.", q: "Jak nazywa się bohater Latarnika?", answer: "Skawiński", wrong: ["Soplica", "Wokulski", "Rzecki"] },
+  { title: "Hobbit", author: "J.R.R. Tolkien", fact: "Bilbo Baggins wyrusza w podróż i stopniowo odkrywa odwagę.", q: "Kto jest głównym bohaterem Hobbita?", answer: "Bilbo Baggins", wrong: ["Frodo", "Aslan", "Nemeczek"] },
+  { title: "Akademia Pana Kleksa", author: "Jan Brzechwa", fact: "Akademia pokazuje świat wyobraźni, nauki i zabawy.", q: "Kto prowadzi Akademię Pana Kleksa?", answer: "Pan Kleks", wrong: ["Pan Twardowski", "Profesor Dumbledore", "Geograf"] },
+  { title: "Reduta Ordona", author: "Adam Mickiewicz", fact: "Utwór pokazuje poświęcenie i walkę o wolność.", q: "Reduta Ordona wiąże się przede wszystkim z motywem...", answer: "poświęcenia za ojczyznę", wrong: ["komizmu", "podróży kosmicznej", "magicznej szkoły"] }
+];
+
+const GRAMMAR_PL = [
+  { topic: "strona czynna i bierna", q: "Które zdanie jest w stronie biernej?", answer: "List został napisany przez ucznia.", wrong: ["Uczeń napisał list.", "Uczeń pisze list.", "Uczeń napisze list."] },
+  { topic: "wypowiedzenie złożone", q: "Które zdanie jest złożone?", answer: "Poszedłem do domu, ponieważ zaczął padać deszcz.", wrong: ["Pada deszcz.", "Lubię książki.", "To ciekawy film."] },
+  { topic: "związek frazeologiczny", q: "Co oznacza frazeologizm 'mieć muchy w nosie'?", answer: "być w złym humorze", wrong: ["lubić owady", "biegać bardzo szybko", "czytać książkę"] },
+  { topic: "części mowy", q: "Który wyraz jest czasownikiem?", answer: "czyta", wrong: ["książka", "zielony", "szybko"] },
+  { topic: "argument", q: "Czym jest argument w wypowiedzi?", answer: "Uzasadnieniem stanowiska", wrong: ["Samym przykładem bez wyjaśnienia", "Tytułem tekstu", "Przypadkowym cytatem"] }
+];
+
+const STYLISTIC = [
+  { name: "porównanie", marker: "jak", example: "odważny jak lew" },
+  { name: "epitet", marker: "określenie rzeczownika", example: "ciemny las" },
+  { name: "przenośnia", marker: "znaczenie niedosłowne", example: "morze łez" },
+  { name: "apostrofa", marker: "bezpośredni zwrot", example: "Litwo! Ojczyzno moja!" },
+  { name: "onomatopeja", marker: "naśladowanie dźwięku", example: "szum, stuk, huk" }
+];
+
+const EN_CONTEXTS = [
+  { ctx: "Sam receives a parcel before a competition. He tries on the trainers and says they are perfect.", q: "What was in the parcel?", answer: "trainers", wrong: ["headphones", "a T-shirt", "a book"], explain: "W rozmowie pada: 'try the trainers on', więc w paczce były buty sportowe." },
+  { ctx: "Jack cannot go by bike because something is wrong with the wheel. It will rain, so his mum decides to drive him.", q: "How will Jack get to school?", answer: "by car", wrong: ["by bike", "by bus", "on foot"], explain: "Autobus odpada, bo do przystanku jest daleko i ma padać. Mama zgadza się go zawieźć." },
+  { ctx: "A girl is waiting in a queue to buy fruit for a class party after returning library books.", q: "Where is the girl probably calling from?", answer: "at a shop", wrong: ["at a doctor", "at school", "at the theatre"], explain: "Kupuje owoce i stoi w kolejce, więc jest w sklepie." },
+  { ctx: "A girl asks James if she can bring her cousin to his party.", q: "What does the girl want James to do?", answer: "agree to something", wrong: ["lend money", "teach her English", "cancel the party"], explain: "Prosi o zgodę, aby przyprowadzić kuzyna." },
+  { ctx: "The boy talks about actors, a stage, and a mystery based on Agatha Christie’s book.", q: "What is the boy talking about?", answer: "a play at the theatre", wrong: ["a football match", "a school test", "a computer game"], explain: "Słowa 'actors' i 'stage' wskazują teatr." }
+];
+
+const ENG_GRAMMAR = [
+  { q: "I ____ football every Saturday.", answer: "play", wrong: ["plays", "playing", "played"], explain: "Present Simple: I/you/we/they + podstawowa forma czasownika." },
+  { q: "She ____ to school yesterday.", answer: "went", wrong: ["go", "goes", "going"], explain: "Yesterday wskazuje Past Simple. Od 'go' forma przeszła to 'went'." },
+  { q: "We ____ get up early this week. It is winter break.", answer: "don't have to", wrong: ["must", "has to", "had to"], explain: "Brak obowiązku: don't have to." },
+  { q: "They ____ finish the project next Friday.", answer: "will", wrong: ["was", "did", "are yesterday"], explain: "Next Friday mówi o przyszłości, więc pasuje 'will'." },
+  { q: "Can I borrow your pen?", answer: "Sure, here you are.", wrong: ["I am 14.", "It is Monday.", "I like pizza."], explain: "To pytanie o pozwolenie/prośbę, odpowiedź musi być adekwatna." }
+];
+
+const VOCAB = [
+  ["journey", "podróż"], ["borrow", "pożyczyć od kogoś"], ["queue", "kolejka"], ["competition", "konkurs/zawody"], ["invite", "zaprosić"], ["advice", "rada"], ["opinion", "opinia"], ["reason", "powód"], ["future", "przyszłość"], ["past", "przeszłość"]
+];
+
+function shuffle(arr, seed) {
+  const a = [...arr];
+  let x = seed || 12345;
+  for (let i = a.length - 1; i > 0; i--) {
+    x = (x * 9301 + 49297) % 233280;
+    const j = Math.floor((x / 233280) * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return { options: arr.map((x) => x.text), correctIndex: arr.findIndex((x) => x.isCorrect) };
+  return a;
 }
 
-function makeQuestion({ id, subject, category, level = 1, intro, rule, question, correct, wrongs, explanation, source = "Mentor8" }) {
-  const mixed = shuffleOptions(correct, wrongs, id);
+function makeQuestion({ subject, category, skill, lesson, question, answer, wrong, explanation, difficulty = 1, seed = 1 }) {
+  const options = shuffle([answer, ...wrong], seed).map(String);
   return {
-    id,
+    id: `${subject}-${category}-${seed}`,
     subject,
     category,
-    level,
-    intro,
-    rule,
+    skill,
+    lesson,
     question,
-    options: mixed.options,
-    correctIndex: mixed.correctIndex,
-    correctAnswer: String(correct),
+    options,
+    correct: String(answer),
     explanation,
-    source,
+    difficulty
   };
 }
 
-const polishLiterature = [
-  { q: "Kto był liderem chłopców z Placu Broni?", c: "Boka", w: ["Nemeczek", "Geréb", "Feri Acz"], e: "Nemeczek nie był liderem grupy. Liderem chłopców z Placu Broni był Boka. Nemeczek był najmłodszy i najsłabszy fizycznie, ale pokazał odwagę i lojalność." },
-  { q: "Kto napisał Chłopców z Placu Broni?", c: "Ferenc Molnár", w: ["Henryk Sienkiewicz", "Adam Mickiewicz", "Aleksander Fredro"], e: "Autorem Chłopców z Placu Broni jest Ferenc Molnár. To ważne, bo błąd rzeczowy przy lekturze może kosztować punkty." },
-  { q: "Która cecha najlepiej opisuje Nemeczka?", c: "lojalność", w: ["chciwość", "zarozumiałość", "obojętność"], e: "Nemeczek jest przykładem bohatera lojalnego. Mimo słabości fizycznej poświęca się dla grupy." },
-  { q: "Kto jest autorem Kamieni na szaniec?", c: "Aleksander Kamiński", w: ["Juliusz Słowacki", "Jan Kochanowski", "Sławomir Mrożek"], e: "Kamienie na szaniec napisał Aleksander Kamiński. Lektura dotyczy m.in. przyjaźni, odwagi i służby w czasie wojny." },
-  { q: "Który bohater Kamieni na szaniec nosił pseudonim Rudy?", c: "Jan Bytnar", w: ["Tadeusz Zawadzki", "Aleksy Dawidowski", "Zośka"], e: "Rudy to Jan Bytnar. Zośka to Tadeusz Zawadzki, a Alek to Aleksy Dawidowski." },
-  { q: "Kto napisał Zemstę?", c: "Aleksander Fredro", w: ["Adam Mickiewicz", "Bolesław Prus", "Henryk Sienkiewicz"], e: "Zemsta to komedia Aleksandra Fredry. Warto pamiętać gatunek i konflikt Cześnika z Rejentem." },
-  { q: "Kto w Zemście jest przeciwnikiem Cześnika?", c: "Rejent", w: ["Papkin", "Wacław", "Dyndalski"], e: "Główny konflikt w Zemście to spór Cześnika z Rejentem. Papkin jest postacią komiczną, ale nie głównym przeciwnikiem Cześnika." },
-  { q: "Kto jest autorem Pana Tadeusza?", c: "Adam Mickiewicz", w: ["Juliusz Słowacki", "Aleksander Kamiński", "Ferenc Molnár"], e: "Pan Tadeusz to epopeja narodowa Adama Mickiewicza. To jedna z kluczowych lektur." },
-  { q: "Jakim gatunkiem literackim jest Pan Tadeusz?", c: "epopeja", w: ["komedia", "nowela", "ballada"], e: "Pan Tadeusz jest epopeją. Utwór pokazuje szeroki obraz życia społeczności i ważne sprawy narodowe." },
-  { q: "Kto napisał Małego Księcia?", c: "Antoine de Saint-Exupéry", w: ["Ferenc Molnár", "Charles Dickens", "Aleksander Fredro"], e: "Małego Księcia napisał Antoine de Saint-Exupéry. Utwór dotyczy m.in. przyjaźni, odpowiedzialności i dorastania." },
-  { q: "Co symbolizuje róża w Małym Księciu?", c: "odpowiedzialną miłość", w: ["wojnę", "pieniądze", "zdradę"], e: "Róża jest dla Małego Księcia kimś wyjątkowym, bo poświęcił jej czas. Symbolizuje więź i odpowiedzialność." },
-  { q: "Kto napisał Latarnika?", c: "Henryk Sienkiewicz", w: ["Bolesław Prus", "Adam Mickiewicz", "Aleksander Fredro"], e: "Latarnik to nowela Henryka Sienkiewicza. Ważny motyw to tęsknota za ojczyzną." },
-  { q: "Jak nazywa się bohater Latarnika?", c: "Skawiński", w: ["Rzecki", "Boka", "Rejent"], e: "Bohaterem Latarnika jest Skawiński. Jego historia pokazuje tęsknotę emigranta za krajem." },
-  { q: "Kto napisał Balladynę?", c: "Juliusz Słowacki", w: ["Adam Mickiewicz", "Aleksander Fredro", "Bolesław Prus"], e: "Balladynę napisał Juliusz Słowacki. To dramat, w którym ważne są motywy winy, kary i żądzy władzy." },
-  { q: "Co doprowadza Balladynę do zbrodni?", c: "żądza władzy", w: ["lenistwo", "nieśmiałość", "ubóstwo języka"], e: "Balladyna popełnia zbrodnie, bo chce zdobyć władzę i pozycję. To ważny motyw interpretacyjny." },
-];
+function buildQuestions() {
+  const qs = [];
+  let seed = 1;
 
-const polishGrammar = [
-  ["Które zdanie jest wypowiedzeniem wielokrotnie złożonym?", "Kiedy wróciłem do domu, mama czytała książkę, a brat odrabiał lekcje.", ["Pada deszcz.", "Lubię książki.", "Uczeń pisze."], "Wypowiedzenie wielokrotnie złożone ma więcej niż dwa orzeczenia lub kilka zdań składowych."],
-  ["Który związek frazeologiczny oznacza: ujawnić tajemnicę?", "puścić farbę", ["mieć muchy w nosie", "wziąć nogi za pas", "rzucać grochem o ścianę"], "Puścić farbę oznacza powiedzieć coś, co miało pozostać tajemnicą."],
-  ["Który wyraz jest rzeczownikiem?", "odwaga", ["odważny", "odważnie", "odważyć"], "Rzeczownik nazywa osoby, rzeczy, zjawiska lub pojęcia, np. odwaga."],
-  ["Który wyraz jest czasownikiem?", "czyta", ["czytelny", "czytanie", "czytelnik"], "Czasownik nazywa czynność lub stan, np. czyta."],
-  ["Które zdanie zawiera porównanie?", "Był szybki jak wiatr.", ["Wiatr śpiewał w kominie.", "Dom milczał.", "Słońce zasnęło."], "Porównanie zwykle zawiera słowa: jak, niczym, jakby."],
-  ["Które zdanie zawiera przenośnię?", "Morze gwiazd świeciło nad miastem.", ["Mam trzy książki.", "Kot siedzi na krześle.", "Idę do szkoły."], "Przenośnia nadaje wyrazom znaczenie niedosłowne."],
-];
+  for (let i = 0; i < 180; i++) {
+    const l = LECTURES[i % LECTURES.length];
+    qs.push(makeQuestion({
+      subject: "polish", category: "Lektury", skill: "znajomość lektur i bohaterów",
+      lesson: `Najpierw rozpoznaj lekturę i bohatera. W pytaniach o lektury nie zgadujemy: jeden błąd rzeczowy może zepsuć całą odpowiedź. ${l.fact}`,
+      question: l.q, answer: l.answer, wrong: l.wrong,
+      explanation: `Poprawna odpowiedź: ${l.answer}. ${l.fact}`,
+      difficulty: 1 + (i % 3), seed: seed++
+    }));
+  }
+  for (let i = 0; i < 80; i++) {
+    const g = GRAMMAR_PL[i % GRAMMAR_PL.length];
+    qs.push(makeQuestion({
+      subject: "polish", category: "Gramatyka", skill: g.topic,
+      lesson: `Zadanie sprawdza: ${g.topic}. Najpierw nazwij zjawisko językowe, potem wybierz odpowiedź.`,
+      question: g.q, answer: g.answer, wrong: g.wrong,
+      explanation: `Poprawna odpowiedź: ${g.answer}. To pasuje do kategorii: ${g.topic}.`,
+      difficulty: 1 + (i % 3), seed: seed++
+    }));
+  }
+  for (let i = 0; i < 70; i++) {
+    const s = STYLISTIC[i % STYLISTIC.length];
+    qs.push(makeQuestion({
+      subject: "polish", category: "Środki stylistyczne", skill: s.name,
+      lesson: `Środek stylistyczny rozpoznajemy po funkcji. ${s.name}: ${s.marker}. Przykład: ${s.example}.`,
+      question: `Jaki środek stylistyczny występuje w przykładzie: "${s.example}"?`, answer: s.name, wrong: STYLISTIC.filter(x => x.name !== s.name).slice(0,3).map(x => x.name),
+      explanation: `Poprawna odpowiedź: ${s.name}. W przykładzie "${s.example}" widać: ${s.marker}.`,
+      difficulty: 1 + (i % 2), seed: seed++
+    }));
+  }
+  for (let i = 0; i < 70; i++) {
+    const contexts = [
+      ["Czytanie ze zrozumieniem", "W tekście: 'Marta wróciła do domu, ponieważ zaczął padać deszcz.'", "Dlaczego Marta wróciła do domu?", "Bo zaczął padać deszcz", ["Bo zgubiła telefon", "Bo była głodna", "Bo nie lubiła spacerów"]],
+      ["Pisanie", "W rozprawce argument to powód popierający tezę, a przykład tylko go ilustruje.", "Co jest argumentem?", "Powód uzasadniający tezę", ["Samo imię bohatera", "Tytuł książki bez wyjaśnienia", "Losowe zdanie z tekstu"]]
+    ][i % 2];
+    qs.push(makeQuestion({ subject: "polish", category: contexts[0], skill: contexts[0], lesson: contexts[1], question: contexts[2], answer: contexts[3], wrong: contexts[4], explanation: `Poprawna odpowiedź: ${contexts[3]}. ${contexts[1]}`, difficulty: 1, seed: seed++ }));
+  }
 
-const englishItems = [
-  ["Which sentence is in Present Simple?", "She plays tennis every Monday.", ["She is playing now.", "She played yesterday.", "She will play tomorrow."], "Present Simple opisuje czynności powtarzalne, np. every Monday."],
-  ["Choose the correct past form: go", "went", ["goed", "goes", "going"], "Czasownik go jest nieregularny: go – went – gone."],
-  ["Choose the correct sentence.", "I don't have to get up early today.", ["I mustn't to get up early today.", "I doesn't have to get up early today.", "I not have to get up early today."], "Don't have to oznacza: nie muszę. Po I używamy don't."],
-  ["Complete: I'm sure they ___ the project next Friday.", "will finish", ["finish yesterday", "finished", "are finish"], "Next Friday wskazuje na przyszłość. Używamy will finish."],
-  ["What does 'lake' mean in Polish?", "jezioro", ["góra", "rzeka", "las"], "Lake to jezioro. W transkrypcji dziewczyna mówi o wakacjach by the lake."],
-  ["What is a good opening for an informal email?", "Hi Mike,", ["Dear Sir or Madam,", "Yours faithfully,", "Best regards only"], "Do kolegi piszemy stylem nieformalnym, np. Hi Mike."],
-  ["Which word means 'kontynuować'?", "continue", ["leave", "break", "forget"], "Continue = kontynuować. Przydatne w zadaniu o utrzymaniu kontaktu."],
-  ["Which answer is a reaction to bad news?", "I'm sorry to hear that.", ["You're welcome.", "Here you are.", "Good appetite."], "I'm sorry to hear that używamy, gdy reagujemy na przykrą wiadomość."],
-  ["Which sentence is grammatically correct?", "She has lived here for two years.", ["She live here since two years.", "She lives here from two years.", "She living here for two years."], "For two years łączy się często z Present Perfect: has lived."],
-  ["Choose the best translation: nie musimy", "we don't have to", ["we mustn't", "we shouldn't to", "we haven't to"], "Don't have to oznacza brak obowiązku. Mustn't oznacza zakaz."],
-];
+  for (let i = 0; i < 140; i++) {
+    const price = 100 + (i % 10) * 20;
+    const pct = [10, 20, 25, 50][i % 4];
+    const ans = price * pct / 100;
+    qs.push(makeQuestion({
+      subject: "math", category: "Procenty i dane", skill: "obliczanie procentu liczby",
+      lesson: `${pct}% oznacza ${pct}/100. Aby obliczyć ${pct}% z liczby, pomnóż liczbę przez ${pct}/100.`,
+      question: `Ile to ${pct}% z ${price}?`, answer: ans, wrong: [ans + 5, Math.max(1, ans - 5), ans * 2],
+      explanation: `Poprawna odpowiedź: ${ans}. Obliczenie: ${price} × ${pct}/100 = ${ans}.`,
+      difficulty: 1 + (i % 3), seed: seed++
+    }));
+  }
+  for (let i = 0; i < 100; i++) {
+    const a = 10 + (i % 40), b = 2 + (i % 8), c = 3 + (i % 7);
+    const ans = a + b * c;
+    qs.push(makeQuestion({ subject: "math", category: "Działania", skill: "kolejność działań", lesson: "Najpierw wykonujemy mnożenie i dzielenie, potem dodawanie i odejmowanie.", question: `Oblicz: ${a} + ${b} × ${c}`, answer: ans, wrong: [(a+b)*c, ans+1, ans-1], explanation: `Poprawna odpowiedź: ${ans}. Najpierw ${b} × ${c} = ${b*c}, potem ${a} + ${b*c} = ${ans}.`, difficulty: 1, seed: seed++ }));
+  }
+  for (let i = 0; i < 90; i++) {
+    const x = 2 + (i % 9), add = 3 + (i % 11), result = 2*x + add;
+    qs.push(makeQuestion({ subject: "math", category: "Algebra", skill: "równania", lesson: "Równanie rozwiązujemy tak, aby znaleźć wartość niewiadomej. Sprawdzamy wynik przez podstawienie.", question: `Rozwiąż równanie: 2x + ${add} = ${result}`, answer: x, wrong: [x+1, x-1, result], explanation: `Poprawna odpowiedź: x = ${x}. Po podstawieniu: 2×${x} + ${add} = ${result}.`, difficulty: 2, seed: seed++ }));
+  }
+  for (let i = 0; i < 100; i++) {
+    const a = 3 + (i % 12), b = 4 + (i % 10);
+    const area = a*b;
+    qs.push(makeQuestion({ subject: "math", category: "Geometria", skill: "pole prostokąta", lesson: "Pole prostokąta liczymy ze wzoru: długość × szerokość.", question: `Prostokąt ma boki ${a} cm i ${b} cm. Jakie ma pole?`, answer: `${area} cm²`, wrong: [`${2*a+2*b} cm²`, `${a+b} cm²`, `${area+2} cm²`], explanation: `Poprawna odpowiedź: ${area} cm². Obliczenie: ${a} × ${b} = ${area}.`, difficulty: 1, seed: seed++ }));
+  }
+  for (let i = 0; i < 70; i++) {
+    const distance = [60, 90, 120, 150][i % 4], speed = [30, 45, 60][i % 3];
+    const time = distance / speed;
+    qs.push(makeQuestion({ subject: "math", category: "Zadania tekstowe", skill: "droga, prędkość, czas", lesson: "Czas obliczamy ze wzoru: czas = droga / prędkość. Jednostki muszą pasować.", question: `Samochód jedzie ${distance} km z prędkością ${speed} km/h. Ile godzin trwa jazda?`, answer: `${time} h`, wrong: [`${distance*speed} h`, `${speed/distance} h`, `${time+1} h`], explanation: `Poprawna odpowiedź: ${time} h. Obliczenie: ${distance} / ${speed} = ${time}.`, difficulty: 2, seed: seed++ }));
+  }
+  for (let i = 0; i < 40; i++) {
+    const total = 10 + (i % 10), good = 1 + (i % 5);
+    qs.push(makeQuestion({ subject: "math", category: "Prawdopodobieństwo", skill: "proste doświadczenia losowe", lesson: "Prawdopodobieństwo to liczba wyników sprzyjających podzielona przez liczbę wszystkich wyników.", question: `W pudełku jest ${total} losów, w tym ${good} wygrywających. Jakie jest prawdopodobieństwo wygranej?`, answer: `${good}/${total}`, wrong: [`${total}/${good}`, `${good}/${total+good}`, `${total-good}/${total}`], explanation: `Poprawna odpowiedź: ${good}/${total}. Wyniki sprzyjające: ${good}, wszystkie: ${total}.`, difficulty: 2, seed: seed++ }));
+  }
 
-function generateMathQuestions(startId) {
-  const out = [];
-  let id = startId;
-  for (let a = 20; a <= 250; a += 10) {
-    for (const p of [10, 20, 25, 50]) {
-      const correct = (a * p) / 100;
-      out.push(makeQuestion({ id: id++, subject: "math", category: "procenty", intro: "W procentach najpierw zamieniamy procent na ułamek albo korzystamy ze znanych wartości.", rule: `${p}% z liczby oznacza ${p}/100 tej liczby.`, question: `Ile to ${p}% z ${a}?`, correct, wrongs: [correct + 5, Math.max(0, correct - 5), correct * 2], explanation: `${p}% z ${a} = ${p}/100 × ${a} = ${correct}. Jeśli odpowiedź była inna, błąd najczęściej polegał na pomyleniu procentu z liczbą.` }));
-    }
+  for (let i = 0; i < 110; i++) {
+    const e = EN_CONTEXTS[i % EN_CONTEXTS.length];
+    qs.push(makeQuestion({ subject: "english", category: "Listening / rozumienie", skill: "wyszukiwanie informacji", lesson: `Najpierw zrozum sytuację. Kontekst: ${e.ctx}`, question: e.q, answer: e.answer, wrong: e.wrong, explanation: `Correct answer: ${e.answer}. ${e.explain}`, difficulty: 1 + (i % 2), seed: seed++ }));
   }
-  for (let a = 2; a <= 18; a++) {
-    const b = a + 3;
-    const expr = `${a} + ${b} × 2`;
-    const correct = a + b * 2;
-    out.push(makeQuestion({ id: id++, subject: "math", category: "dzialania", intro: "W działaniach mieszanych obowiązuje kolejność działań.", rule: "Najpierw mnożenie i dzielenie, potem dodawanie i odejmowanie.", question: `Ile wynosi ${expr}?`, correct, wrongs: [(a + b) * 2, correct + 2, correct - 2], explanation: `Najpierw liczymy ${b} × 2 = ${b * 2}, potem dodajemy ${a}. Wynik to ${correct}.` }));
+  for (let i = 0; i < 90; i++) {
+    const g = ENG_GRAMMAR[i % ENG_GRAMMAR.length];
+    qs.push(makeQuestion({ subject: "english", category: "Grammar", skill: "środki językowe", lesson: "W zadaniach gramatycznych szukaj słowa-klucza: yesterday, every day, next week, must, can. Ono wskazuje formę.", question: g.q, answer: g.answer, wrong: g.wrong, explanation: g.explain, difficulty: 1 + (i % 3), seed: seed++ }));
   }
-  for (let x = 1; x <= 40; x++) {
-    const add = (x % 9) + 1;
-    const result = x + add;
-    out.push(makeQuestion({ id: id++, subject: "math", category: "algebra", intro: "Równanie rozwiązujemy tak, żeby zostawić x samo po jednej stronie.", rule: "Jeśli do x dodano liczbę, odejmij tę liczbę od obu stron.", question: `Rozwiąż równanie: x + ${add} = ${result}. Ile wynosi x?`, correct: x, wrongs: [result, add, x + 1], explanation: `Odejmujemy ${add} od obu stron: x = ${result} - ${add} = ${x}.` }));
+  for (let i = 0; i < 70; i++) {
+    const [word, pl] = VOCAB[i % VOCAB.length];
+    qs.push(makeQuestion({ subject: "english", category: "Vocabulary", skill: "słownictwo", lesson: `Poznaj słowo w kontekście. '${word}' = ${pl}.`, question: `What does '${word}' mean in Polish?`, answer: pl, wrong: ["krzesło", "ciemność", "szybko"], explanation: `Correct answer: ${pl}. Zapamiętaj: ${word} = ${pl}.`, difficulty: 1, seed: seed++ }));
   }
-  for (let w = 3; w <= 20; w++) {
-    const h = w + 2;
-    out.push(makeQuestion({ id: id++, subject: "math", category: "geometria", intro: "Pole prostokąta liczymy ze wzoru: długość razy szerokość.", rule: "P = a × b.", question: `Prostokąt ma boki ${w} cm i ${h} cm. Jakie jest jego pole?`, correct: `${w * h} cm²`, wrongs: [`${2 * (w + h)} cm`, `${w + h} cm²`, `${w * h} cm`], explanation: `Pole to ${w} × ${h} = ${w * h} cm². Obwód byłby innym działaniem: 2 × (${w} + ${h}).` }));
-    out.push(makeQuestion({ id: id++, subject: "math", category: "geometria", intro: "Obwód to suma długości wszystkich boków.", rule: "Dla prostokąta O = 2a + 2b.", question: `Prostokąt ma boki ${w} cm i ${h} cm. Jaki jest obwód?`, correct: `${2 * (w + h)} cm`, wrongs: [`${w * h} cm²`, `${w + h} cm`, `${w * h} cm`], explanation: `Obwód to ${w} + ${h} + ${w} + ${h} = ${2 * (w + h)} cm.` }));
+  for (let i = 0; i < 70; i++) {
+    const item = [
+      { q: "Your friend says: I passed the exam! What do you say?", a: "Congratulations!", w: ["I'm sorry.", "Can I borrow it?", "Turn left."], ex: "Na gratulacje odpowiadamy zwrotem 'Congratulations!'" },
+      { q: "You want permission to open the window. What do you say?", a: "May I open the window?", w: ["I opened the window yesterday.", "The window is blue.", "I don't like windows."], ex: "Pytanie o pozwolenie: May I...?" },
+      { q: "You want to invite a friend. What do you say?", a: "Would you like to come?", w: ["I was born there.", "It costs five pounds.", "She is my sister."], ex: "Zaproszenie często zaczyna się od: Would you like to...?" }
+    ][i % 3];
+    qs.push(makeQuestion({ subject: "english", category: "Functions", skill: "funkcje językowe", lesson: "W funkcjach językowych najważniejsze jest dopasowanie reakcji do sytuacji.", question: item.q, answer: item.a, wrong: item.w, explanation: item.ex, difficulty: 1, seed: seed++ }));
   }
-  for (let n = 3; n <= 22; n++) {
-    const nums = [n, n + 2, n + 4];
-    const avg = n + 2;
-    out.push(makeQuestion({ id: id++, subject: "math", category: "statystyka", intro: "Średnia arytmetyczna to suma liczb podzielona przez ich liczbę.", rule: "Dodaj liczby i podziel przez ilość liczb.", question: `Jaka jest średnia liczb: ${nums.join(", ")}?`, correct: avg, wrongs: [avg + 1, avg - 1, nums.reduce((a,b)=>a+b,0)], explanation: `Suma to ${nums.reduce((a,b)=>a+b,0)}. Dzielimy przez 3, więc średnia to ${avg}.` }));
+  for (let i = 0; i < 40; i++) {
+    const prompts = [
+      { q: "Który element musi znaleźć się w krótkim e-mailu po angielsku?", a: "Odpowiedź na wszystkie punkty polecenia", w: ["Tylko długie zdania", "Same trudne słowa", "Brak podpisu"], ex: "W writing liczy się przekazanie informacji, spójność, zakres i poprawność." },
+      { q: "Które zdanie dobrze rozwija informację 'why I left the club'?", a: "I left the club because I moved to another city.", w: ["I like pizza.", "My club is blue.", "Yesterday very good."], ex: "Zdanie musi odpowiadać na konkretny punkt polecenia." }
+    ][i % 2];
+    qs.push(makeQuestion({ subject: "english", category: "Writing", skill: "krótka wypowiedź pisemna", lesson: "W e-mailu egzaminacyjnym rozwiń trzy podpunkty. Lepiej prosto i jasno niż długo i chaotycznie.", question: prompts.q, answer: prompts.a, wrong: prompts.w, explanation: prompts.ex, difficulty: 2, seed: seed++ }));
   }
-  for (let price = 40; price <= 240; price += 20) {
-    const pct = price % 40 === 0 ? 25 : 10;
-    const discount = price * pct / 100;
-    const newPrice = price - discount;
-    out.push(makeQuestion({ id: id++, subject: "math", category: "tekstowe", intro: "W zadaniu tekstowym najpierw ustal, o co pytają, potem wybierz działanie.", rule: "Obniżka oznacza: cena początkowa minus wartość obniżki.", question: `Cena wynosiła ${price} zł. Obniżono ją o ${pct}%. Jaka jest nowa cena?`, correct: `${newPrice} zł`, wrongs: [`${discount} zł`, `${price + discount} zł`, `${price - pct} zł`], explanation: `${pct}% z ${price} zł to ${discount} zł. Nowa cena: ${price} - ${discount} = ${newPrice} zł.` }));
-  }
-  return out;
+
+  return qs.slice(0, 1000);
 }
 
-function generatePolishQuestions(startId) {
-  const out = [];
-  let id = startId;
-  for (let r = 0; r < 12; r++) {
-    polishLiterature.forEach((item) => out.push(makeQuestion({ id: id++, subject: "polish", category: "lektury", intro: "Na egzaminie z polskiego pytania o lektury sprawdzają konkretną wiedzę i rozumienie postaci.", rule: "Przy lekturach unikaj zgadywania. Błąd rzeczowy może kosztować punkt.", question: item.q, correct: item.c, wrongs: item.w, explanation: item.e })));
-  }
-  const readingStems = [
-    ["Co trzeba zrobić najpierw w pytaniu o szczegół z tekstu?", "znaleźć fragment w tekście", ["od razu zgadywać", "pisać najdłuższą odpowiedź", "pomijać polecenie"], "W pytaniu o szczegół najpierw szukamy fragmentu w tekście. Potem odpowiadamy własnymi słowami, jeśli polecenie tego wymaga."],
-    ["Co oznacza polecenie: uzasadnij odpowiedź?", "podaj powód lub argument", ["zaznacz losową literę", "przepisz tytuł", "napisz tylko tak/nie"], "Uzasadnienie wymaga wyjaśnienia, dlaczego odpowiedź jest poprawna."],
-    ["Co jest najlepszą strategią przy pytaniu P/F?", "sprawdzić każde zdanie osobno w tekście", ["zaznaczyć wszystko P", "zaznaczyć wszystko F", "wybrać odpowiedź po brzmieniu"], "W P/F każde zdanie sprawdzamy osobno. Jedno może być prawdziwe, drugie fałszywe."],
-    ["Czego nie wolno robić przy odpowiedzi własnymi słowami?", "kopiować długiego fragmentu bez potrzeby", ["odpowiadać jasno", "odnieść się do pytania", "użyć prostego zdania"], "Jeśli polecenie mówi: własnymi słowami, trzeba wyjaśnić sens, a nie przepisywać cały fragment."],
-  ];
-  for (let r = 0; r < 25; r++) {
-    readingStems.forEach((i) => out.push(makeQuestion({ id: id++, subject: "polish", category: "czytanie", intro: "Czytanie ze zrozumieniem polega na pracy z tekstem, nie na zgadywaniu.", rule: "Najpierw polecenie, potem fragment tekstu, potem odpowiedź.", question: i[0], correct: i[1], wrongs: i[2], explanation: i[3] })));
-  }
-  for (let r = 0; r < 16; r++) {
-    polishGrammar.forEach((i, idx) => out.push(makeQuestion({ id: id++, subject: "polish", category: idx < 4 ? "gramatyka" : "stylistyka", intro: idx < 4 ? "Gramatyka pomaga rozumieć budowę zdania i części mowy." : "Środki stylistyczne trzeba rozpoznawać po funkcji w tekście.", rule: idx < 4 ? "Zwróć uwagę na rolę wyrazu lub liczbę orzeczeń." : "Pytaj: czy to jest dosłowne, porównujące, czy obrazowe?", question: i[0], correct: i[1], wrongs: i[2], explanation: i[3] })));
-  }
-  const writing = [
-    ["Co musi mieć dobre ogłoszenie?", "konkretną informację: co, gdzie, kiedy i kontakt", ["same emocje bez faktów", "tylko tytuł", "same ozdobniki"], "Ogłoszenie ma być użyteczne. Czytelnik musi wiedzieć, czego dotyczy, gdzie/kiedy i co ma zrobić."],
-    ["Co jest potrzebne w rozprawce?", "teza i argumenty", ["tylko dialogi", "same opisy przyrody", "lista przypadkowych lektur"], "Rozprawka wymaga stanowiska i argumentów. Przykłady z lektur wzmacniają odpowiedź."],
-    ["Co jest ważne w opowiadaniu?", "wydarzenia, bohater i logiczna kolejność", ["same definicje", "same równania", "brak akcji"], "Opowiadanie musi mieć przebieg wydarzeń. Dobrze, gdy ma wstęp, rozwinięcie i zakończenie."],
-    ["Co oznacza spójność tekstu?", "zdania łączą się logicznie", ["każde zdanie jest o czymś innym", "brak akapitów zawsze daje spójność", "wystarczy dużo trudnych słów"], "Spójny tekst prowadzi czytelnika krok po kroku. Pomagają w tym akapity i wyrażenia łączące."],
-  ];
-  for (let r = 0; r < 25; r++) {
-    writing.forEach((i) => out.push(makeQuestion({ id: id++, subject: "polish", category: "pisanie", intro: "Wypowiedź pisemna jest oceniana nie tylko za treść, ale też kompozycję, styl, język, ortografię i interpunkcję.", rule: "Najpierw plan, potem pisanie. Jeden akapit = jedna część myśli.", question: i[0], correct: i[1], wrongs: i[2], explanation: i[3] })));
-  }
-  return out;
-}
+const ALL_QUESTIONS = buildQuestions();
 
-function generateEnglishQuestions(startId) {
-  const out = [];
-  let id = startId;
-  for (let r = 0; r < 18; r++) {
-    englishItems.forEach((i, idx) => out.push(makeQuestion({ id: id++, subject: "english", category: idx < 4 ? "grammar" : idx < 7 ? "vocabulary" : idx < 9 ? "functions" : "writing", intro: "W angielskim na egzaminie liczy się rozumienie sensu, a nie tłumaczenie każdego słowa.", rule: "Najpierw szukaj słowa-klucza albo czasu w zdaniu.", question: i[0], correct: i[1], wrongs: i[2], explanation: i[3] })));
-  }
-  const reading = [
-    ["In the listening text, what sport does the girl like most in summer?", "swimming", ["climbing", "running", "skiing"], "She says she loves spending summers by the lake and does a lot of swimming. Running is only sometimes, climbing is too tiring."],
-    ["If someone says: I can take care of the technical stuff, what are they offering?", "help", ["complaint", "refusal", "invitation"], "Take care of the technical stuff means the person offers practical help."],
-    ["What does 'too tiring' mean?", "zbyt męczące", ["bardzo tanie", "zbyt łatwe", "bardzo smaczne"], "Tiring means męczący. Too tiring means zbyt męczące."],
-    ["What is the best answer to: Do you want me to help you?", "Yes, please. That would be great.", ["I am twelve.", "It is under the table.", "At 7 p.m. yesterday."], "Pytanie dotyczy propozycji pomocy, więc odpowiedź powinna przyjąć albo odrzucić pomoc."],
-  ];
-  for (let r = 0; r < 25; r++) {
-    reading.forEach((i) => out.push(makeQuestion({ id: id++, subject: "english", category: "reading", intro: "W zadaniach na rozumienie tekstu szukaj sensu wypowiedzi i słów-kluczy.", rule: "Nie wybieraj odpowiedzi tylko dlatego, że zawiera słowo z tekstu. Sprawdź sens.", question: i[0], correct: i[1], wrongs: i[2], explanation: i[3] })));
-  }
-  return out;
+function readStore(key, fallback) {
+  if (typeof window === "undefined") return fallback;
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
 }
-
-function buildBank() {
-  let bank = [];
-  bank = bank.concat(generateMathQuestions(1));
-  bank = bank.concat(generatePolishQuestions(3001));
-  bank = bank.concat(generateEnglishQuestions(6001));
-  // Ensure exactly 1000 questions by cycling deterministic variants if needed.
-  const base = bank.slice();
-  let idx = 0;
-  while (bank.length < 1000) {
-    const q = base[idx % base.length];
-    bank.push({ ...q, id: 9000 + bank.length, question: q.question, explanation: q.explanation });
-    idx++;
-  }
-  return bank.slice(0, 1000);
-}
-
-function speak(text, enabled) {
-  if (!enabled || typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = "pl-PL";
-  u.rate = 0.86;
-  u.pitch = 1;
-  window.speechSynthesis.speak(u);
+function writeStore(key, value) {
+  if (typeof window !== "undefined") localStorage.setItem(key, JSON.stringify(value));
 }
 
 export default function Home() {
-  const questions = useMemo(() => buildBank(), []);
+  const [view, setView] = useState("learn");
   const [subject, setSubject] = useState("all");
   const [category, setCategory] = useState("all");
-  const [current, setCurrent] = useState(null);
-  const [selected, setSelected] = useState(null);
   const [voice, setVoice] = useState(false);
-  const [stats, setStats] = useState({ correct: 0, total: 0 });
   const [showLesson, setShowLesson] = useState(true);
+  const [selected, setSelected] = useState(null);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [sessionCount, setSessionCount] = useState(0);
+  const [days, setDays] = useState(14);
+  const [microMode, setMicroMode] = useState(true);
+  const [stats, setStats] = useState({ answered: 0, correct: 0, bySubject: {}, mistakes: [], sessions: 0, help: 0, skips: 0 });
 
-  const filtered = questions.filter((q) => (subject === "all" || q.subject === subject) && (category === "all" || q.category === category));
-  const categories = ["all", ...Array.from(new Set(questions.filter((q)=>subject === "all" || q.subject === subject).map((q) => q.category)))];
+  useEffect(() => { setStats(readStore("mentor8_stats_v5", { answered: 0, correct: 0, bySubject: {}, mistakes: [], sessions: 0, help: 0, skips: 0 })); }, []);
+  useEffect(() => { if (voice && current) speak(current.lesson); }, [voice]);
 
-  function nextQuestion() {
-    const list = filtered.length ? filtered : questions;
-    const q = list[Math.floor(Math.random() * list.length)];
-    setCurrent(q);
-    setSelected(null);
-    setShowLesson(true);
-    speak(`${q.intro}. ${q.rule}. ${q.question}`, voice);
-  }
+  const categoryOptions = subject === "all" ? ["all"] : ["all", ...CATEGORIES[subject]];
+
+  const filtered = useMemo(() => {
+    return ALL_QUESTIONS.filter(q => (subject === "all" || q.subject === subject) && (category === "all" || q.category === category));
+  }, [subject, category]);
 
   useEffect(() => {
-    const saved = typeof window !== "undefined" ? localStorage.getItem("mentor8_stats_v4") : null;
-    if (saved) setStats(JSON.parse(saved));
-    const q = questions[Math.floor(Math.random() * questions.length)];
-    setCurrent(q);
-  }, [questions]);
+    setQuestionIndex(0);
+    setSelected(null);
+    setShowLesson(true);
+  }, [subject, category]);
 
-  function choose(i) {
-    if (selected !== null) return;
-    setSelected(i);
-    const ok = i === current.correctIndex;
-    const nextStats = { correct: stats.correct + (ok ? 1 : 0), total: stats.total + 1 };
-    setStats(nextStats);
-    localStorage.setItem("mentor8_stats_v4", JSON.stringify(nextStats));
-    speak(`${ok ? "Dobrze." : "Jeszcze nie."} Poprawna odpowiedź to: ${current.correctAnswer}. ${current.explanation}`, voice);
+  const current = filtered.length ? filtered[questionIndex % filtered.length] : null;
+  const planMode = days <= 5 ? "tryb egzaminowy" : days <= 10 ? "tryb intensywny" : days <= 20 ? "tryb zbalansowany" : "tryb normalny";
+  const dailyTarget = days <= 5 ? 18 : days <= 10 ? 12 : days <= 20 ? 8 : 5;
+  const sessionLimit = microMode ? Math.min(5, dailyTarget) : dailyTarget;
+
+  function speak(text) {
+    if (!voice || typeof window === "undefined" || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "pl-PL";
+    utter.rate = 0.86;
+    window.speechSynthesis.speak(utter);
   }
 
-  if (!current) return null;
-  const answered = selected !== null;
-  const ok = answered && selected === current.correctIndex;
+  function answer(option) {
+    if (!current || selected) return;
+    const ok = option === current.correct;
+    setSelected(option);
+    const nextStats = { ...stats };
+    nextStats.answered += 1;
+    if (ok) nextStats.correct += 1;
+    nextStats.bySubject[current.subject] = nextStats.bySubject[current.subject] || { answered: 0, correct: 0 };
+    nextStats.bySubject[current.subject].answered += 1;
+    if (ok) nextStats.bySubject[current.subject].correct += 1;
+    if (!ok) nextStats.mistakes = [{ id: current.id, subject: current.subject, category: current.category, question: current.question, selected: option, correct: current.correct, explanation: current.explanation }, ...(nextStats.mistakes || [])].slice(0, 20);
+    setStats(nextStats);
+    writeStore("mentor8_stats_v5", nextStats);
+    speak(ok ? `Dobrze. ${current.explanation}` : `Jeszcze nie. Poprawna odpowiedź to: ${current.correct}. ${current.explanation}`);
+  }
 
-  return (
-    <main className="page">
-      <section className="shell">
-        <header className="top">
-          <div>
-            <div className="badge">Mentor8 • Quiz v4</div>
-            <h1>Misja: jedno pytanie, jasny kontekst</h1>
-            <p className="sub">Bank 1000 pytań z polskiego, matematyki i angielskiego. Bez timera. Głos można wyłączyć.</p>
-          </div>
-          <button className={voice ? "voice on" : "voice"} onClick={() => setVoice(!voice)}>{voice ? "Głos: ON" : "Głos: OFF"}</button>
-        </header>
+  function nextQuestion() {
+    setQuestionIndex(i => (i + 1) % Math.max(1, filtered.length));
+    setSelected(null);
+    setShowLesson(true);
+    setSessionCount(c => c + 1);
+  }
 
-        <section className="controls">
-          <label>Przedmiot
-            <select value={subject} onChange={(e)=>{setSubject(e.target.value); setCategory("all");}}>
-              {Object.entries(SUBJECTS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
-            </select>
-          </label>
-          <label>Kategoria
-            <select value={category} onChange={(e)=>setCategory(e.target.value)}>
-              {categories.map((c) => <option key={c} value={c}>{CATEGORY_LABELS[c] || c}</option>)}
-            </select>
-          </label>
-          <div className="stats">Wynik: {stats.correct}/{stats.total}</div>
-        </section>
+  function skip() {
+    const nextStats = { ...stats, skips: (stats.skips || 0) + 1 };
+    setStats(nextStats); writeStore("mentor8_stats_v5", nextStats); nextQuestion();
+  }
 
-        <section className="card">
-          <div className="meta">
-            <span>{SUBJECTS[current.subject]}</span>
-            <span>{CATEGORY_LABELS[current.category]}</span>
-            <span>Poziom {current.level}</span>
-          </div>
+  function resetStats() {
+    const s = { answered: 0, correct: 0, bySubject: {}, mistakes: [], sessions: 0, help: 0, skips: 0 };
+    setStats(s); writeStore("mentor8_stats_v5", s);
+  }
 
-          {showLesson && (
-            <div className="lesson">
-              <h2>Zanim odpowiesz</h2>
-              <p><b>Kontekst:</b> {current.intro}</p>
-              <p><b>Zasada:</b> {current.rule}</p>
-              <button className="small" onClick={()=>setShowLesson(false)}>Rozumiem — pokaż tylko pytanie</button>
+  function help() {
+    const nextStats = { ...stats, help: (stats.help || 0) + 1 };
+    setStats(nextStats); writeStore("mentor8_stats_v5", nextStats);
+    setShowLesson(true);
+    speak(current?.lesson || "");
+  }
+
+  const pct = stats.answered ? Math.round((stats.correct / stats.answered) * 100) : 0;
+
+  return <main className="app">
+    <style>{styles}</style>
+    <header className="topbar">
+      <div>
+        <div className="brand">Mentor8</div>
+        <div className="sub">CKE Focus • spokojny tryb nauki • bez timera</div>
+      </div>
+      <nav>
+        <button className={view === "learn" ? "active" : ""} onClick={() => setView("learn")}>Uczeń</button>
+        <button className={view === "compressor" ? "active" : ""} onClick={() => setView("compressor")}>Kompresor</button>
+        <button className={view === "parent" ? "active" : ""} onClick={() => setView("parent")}>Panel rodzica</button>
+      </nav>
+    </header>
+
+    {view === "learn" && <section className="grid">
+      <aside className="card side">
+        <h2>Ustawienia</h2>
+        <label>Przedmiot</label>
+        <select value={subject} onChange={e => setSubject(e.target.value)}>
+          {Object.entries(SUBJECTS).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+        <label>Kategoria</label>
+        <select value={category} onChange={e => setCategory(e.target.value)} disabled={subject === "all"}>
+          {categoryOptions.map(c => <option key={c} value={c}>{c === "all" ? "Wszystkie" : c}</option>)}
+        </select>
+        <div className="toggle"><span>Głos</span><button onClick={() => setVoice(v=>!v)} className={voice ? "on" : ""}>{voice ? "ON" : "OFF"}</button></div>
+        <div className="toggle"><span>Mikro-sesja</span><button onClick={() => setMicroMode(v=>!v)} className={microMode ? "on" : ""}>{microMode ? "ON" : "OFF"}</button></div>
+        <div className="muted">Znaleziono pytań: {filtered.length}. Filtrowanie działa lokalnie po przedmiocie i kategorii.</div>
+        <div className="score">Wynik: {stats.correct}/{stats.answered} ({pct}%)</div>
+      </aside>
+
+      <section className="card questionCard">
+        {!current ? <h2>Brak pytań dla filtra.</h2> : <>
+          <div className="pillrow"><span>{SUBJECTS[current.subject]}</span><span>{current.category}</span><span>{current.skill}</span></div>
+          <h1>{showLesson ? "Najpierw krótka nauka" : "Pytanie"}</h1>
+          {showLesson ? <div className="lesson">
+            <p>{current.lesson}</p>
+            <button className="primary" onClick={() => { setShowLesson(false); speak(current.question); }}>Rozumiem. Pokaż pytanie</button>
+          </div> : <>
+            <p className="question">{current.question}</p>
+            <div className="options">
+              {current.options.map(opt => {
+                const state = selected ? opt === current.correct ? "good" : opt === selected ? "bad" : "" : "";
+                return <button key={opt} className={state} onClick={() => answer(opt)} disabled={!!selected}>{opt}</button>
+              })}
             </div>
-          )}
-
-          <h2 className="question">{current.question}</h2>
-          <div className="options">
-            {current.options.map((op, i) => {
-              const cls = answered ? (i === current.correctIndex ? "option correct" : i === selected ? "option wrong" : "option") : "option";
-              return <button key={i} className={cls} onClick={()=>choose(i)}>{String.fromCharCode(65+i)}. {op}</button>
-            })}
-          </div>
-
-          {answered && (
-            <div className={ok ? "feedback good" : "feedback bad"}>
-              <h3>{ok ? "Odpowiedź poprawna" : "Jeszcze nie — spokojnie"}</h3>
-              <p><b>Poprawna odpowiedź:</b> {current.correctAnswer}</p>
+            {selected && <div className={selected === current.correct ? "feedback goodbox" : "feedback badbox"}>
+              <h3>{selected === current.correct ? "Poprawnie" : "Jeszcze nie"}</h3>
+              <p><b>Poprawna odpowiedź:</b> {current.correct}</p>
               <p>{current.explanation}</p>
-            </div>
-          )}
-
+            </div>}
+          </>}
           <div className="actions">
-            <button onClick={nextQuestion}>Losuj następne pytanie</button>
-            <button className="secondary" onClick={()=>speak(`${current.intro}. ${current.rule}. ${current.question}`, voice)}>Odsłuchaj pytanie</button>
+            <button onClick={help}>Pomóż mi</button>
+            <button onClick={skip}>Pomiń</button>
+            <button className="primary" onClick={nextQuestion}>{sessionCount + 1 >= sessionLimit ? "Zakończ / następne" : "Następne"}</button>
           </div>
-        </section>
+          {sessionCount + 1 >= sessionLimit && <div className="calm">To wystarczy na jedną mikro-sesję. Możesz skończyć bez straty postępu.</div>}
+        </>}
       </section>
-      <style jsx>{`
-        .page{min-height:100vh;background:radial-gradient(circle at top left,#172554,#020617 55%);color:#e5e7eb;font-family:Inter,Arial,sans-serif;padding:24px;}
-        .shell{max-width:1050px;margin:0 auto;}
-        .top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:20px;}
-        h1{font-size:34px;margin:8px 0 8px;line-height:1.1}.sub{color:#a7b0c0;max-width:720px}.badge{color:#93c5fd;font-weight:700;letter-spacing:.04em;text-transform:uppercase;font-size:13px}
-        .voice,.controls select,.actions button,.small{border:1px solid #334155;background:#0f172a;color:#e5e7eb;border-radius:14px;padding:13px 16px;font-size:15px;cursor:pointer}.voice.on{background:#065f46;border-color:#10b981}.controls{display:grid;grid-template-columns:1fr 1fr auto;gap:14px;margin:18px 0;align-items:end}.controls label{display:flex;flex-direction:column;gap:7px;color:#cbd5e1}.stats{background:#111827;border:1px solid #334155;border-radius:14px;padding:14px 18px;color:#d1fae5}.card{background:rgba(15,23,42,.88);border:1px solid #334155;border-radius:26px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.3)}.meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}.meta span{background:#1e293b;color:#bfdbfe;border:1px solid #334155;border-radius:999px;padding:7px 11px;font-size:13px}.lesson{background:#0b1220;border:1px solid #1d4ed8;border-radius:20px;padding:18px;margin-bottom:18px}.lesson h2{margin-top:0}.lesson p{font-size:17px;line-height:1.55}.small{padding:10px 13px;background:#1e3a8a}.question{font-size:26px;line-height:1.3;margin:22px 0}.options{display:grid;grid-template-columns:1fr 1fr;gap:14px}.option{text-align:left;border:1px solid #475569;background:#111827;color:white;border-radius:18px;padding:18px;font-size:18px;cursor:pointer}.option:hover{border-color:#93c5fd}.option.correct{background:#064e3b;border-color:#10b981}.option.wrong{background:#7f1d1d;border-color:#ef4444}.feedback{margin-top:20px;border-radius:20px;padding:18px;line-height:1.5}.feedback.good{background:#052e2b;border:1px solid #10b981}.feedback.bad{background:#2a1620;border:1px solid #fb7185}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:22px}.actions button{background:#2563eb;border:0;color:white;border-radius:16px;padding:15px 18px;font-size:16px;cursor:pointer}.actions .secondary{background:#1f2937;border:1px solid #475569}@media(max-width:760px){.top{flex-direction:column}.controls{grid-template-columns:1fr}.options{grid-template-columns:1fr}.card{padding:20px}.question{font-size:22px}h1{font-size:28px}}
-      `}</style>
-    </main>
-  );
+    </section>}
+
+    {view === "compressor" && <section className="card full">
+      <h1>Kompresor nauki</h1>
+      <p className="muted">Ustaw liczbę dni do egzaminu. System nie wydłuża jednej lekcji, tylko dzieli naukę na krótkie mikro-sesje.</p>
+      <label>Liczba dni do egzaminu: {days}</label>
+      <input type="range" min="5" max="30" value={days} onChange={e=>setDays(Number(e.target.value))} />
+      <div className="compressGrid">
+        <div><b>Tryb:</b><br/>{planMode}</div>
+        <div><b>Cel dzienny:</b><br/>{dailyTarget} pytań</div>
+        <div><b>Mikro-sesja:</b><br/>{sessionLimit} pytań</div>
+      </div>
+      <h2>Proponowany dzień nauki</h2>
+      <ol className="plan">
+        <li>Matematyka: 1 mikro-sesja z obliczeń i zadania tekstowego.</li>
+        <li>Polski: 1 mikro-sesja z lektur lub gramatyki.</li>
+        <li>Angielski: 1 mikro-sesja ze słownictwa / funkcji / reading.</li>
+        <li>Powtórka błędów z panelu rodzica.</li>
+      </ol>
+      <p className="calm">Przy 5–10 dniach system ma trenować najważniejsze typy zadań, nie „przerabiać wszystko na siłę”.</p>
+    </section>}
+
+    {view === "parent" && <section className="card full">
+      <h1>Panel rodzica</h1>
+      <div className="compressGrid">
+        <div><b>Odpowiedzi:</b><br/>{stats.answered}</div>
+        <div><b>Poprawne:</b><br/>{stats.correct}</div>
+        <div><b>Skuteczność:</b><br/>{pct}%</div>
+        <div><b>Pomoc:</b><br/>{stats.help || 0}</div>
+      </div>
+      <h2>Wynik według przedmiotów</h2>
+      <div className="table">
+        {Object.keys(SUBJECTS).filter(s=>s!=="all").map(s => {
+          const st = stats.bySubject?.[s] || { answered: 0, correct: 0 };
+          const p = st.answered ? Math.round(st.correct/st.answered*100) : 0;
+          return <div key={s} className="row"><span>{SUBJECTS[s]}</span><span>{st.correct}/{st.answered}</span><span>{p}%</span></div>
+        })}
+      </div>
+      <h2>Ostatnie błędy — do spokojnej powtórki</h2>
+      {(stats.mistakes || []).length === 0 ? <p className="muted">Brak zapisanych błędów.</p> : stats.mistakes.map((m, i) => <div className="mistake" key={i}>
+        <b>{SUBJECTS[m.subject]} • {m.category}</b>
+        <p>{m.question}</p>
+        <p>Wybrano: {m.selected}. Poprawnie: {m.correct}.</p>
+        <p>{m.explanation}</p>
+      </div>)}
+      <button onClick={resetStats}>Wyczyść statystyki</button>
+    </section>}
+  </main>
 }
+
+const styles = `
+  *{box-sizing:border-box} body{margin:0;background:#08111f;color:#eaf2ff;font-family:Inter,Arial,sans-serif} .app{min-height:100vh;padding:24px;max-width:1180px;margin:0 auto}.topbar{display:flex;justify-content:space-between;gap:20px;align-items:center;margin-bottom:22px}.brand{font-size:32px;font-weight:800}.sub,.muted{color:#94a3b8;line-height:1.5}nav{display:flex;gap:10px;flex-wrap:wrap}button,select,input{font:inherit}button{background:#17233a;color:#eaf2ff;border:1px solid #31415f;border-radius:14px;padding:12px 16px;cursor:pointer}button:hover{border-color:#76e4b8}.active,.primary{background:#2dd4bf;color:#06131f;border-color:#2dd4bf;font-weight:800}.grid{display:grid;grid-template-columns:290px 1fr;gap:20px}.card{background:linear-gradient(180deg,#101b31,#0d1728);border:1px solid #24324f;border-radius:24px;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.25)}.side label,.full label{display:block;margin-top:18px;margin-bottom:8px;color:#cbd5e1}select{width:100%;background:#0b1324;color:#fff;border:1px solid #31415f;border-radius:12px;padding:12px}.toggle{display:flex;align-items:center;justify-content:space-between;margin:18px 0}.toggle .on{background:#2dd4bf;color:#06131f}.score{margin-top:18px;padding:14px;border-radius:14px;background:#0b1324}.pillrow{display:flex;gap:8px;flex-wrap:wrap}.pillrow span{background:#16233b;color:#a7f3d0;border:1px solid #2b4b62;padding:8px 10px;border-radius:999px;font-size:13px}.questionCard h1,.full h1{font-size:34px;margin:18px 0}.lesson,.question{font-size:24px;line-height:1.55}.options{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:20px}.options button{font-size:20px;text-align:left;min-height:72px}.options .good{background:#134e4a;border-color:#2dd4bf}.options .bad{background:#4c1d1d;border-color:#fb7185}.feedback{margin-top:18px;padding:18px;border-radius:18px}.goodbox{background:#0f3f37;border:1px solid #2dd4bf}.badbox{background:#3b1620;border:1px solid #fb7185}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}.calm{margin-top:18px;background:#111d33;border:1px solid #334155;border-radius:16px;padding:14px;color:#cbd5e1}.full{max-width:980px;margin:0 auto}.compressGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:20px 0}.compressGrid div{background:#0b1324;border:1px solid #253857;border-radius:16px;padding:18px}.plan li{margin:12px 0;line-height:1.45}.table{display:grid;gap:10px}.row{display:grid;grid-template-columns:1fr 100px 80px;gap:12px;background:#0b1324;padding:14px;border-radius:14px}.mistake{background:#0b1324;border:1px solid #253857;border-radius:16px;padding:16px;margin:12px 0}input[type=range]{width:100%}@media(max-width:800px){.topbar{display:block}.grid{grid-template-columns:1fr}.options{grid-template-columns:1fr}.compressGrid{grid-template-columns:1fr 1fr}.questionCard h1,.full h1{font-size:28px}.lesson,.question{font-size:20px}}`;
